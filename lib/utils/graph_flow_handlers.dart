@@ -8,10 +8,10 @@ import '../screens/bipartite_matrix_screen.dart';
 
 import '../screens/northwest_corner_screen.dart';
 
-import '../screens/johnson_screen.dart';
+import '../screens/cpm_screen.dart';
 
 class GraphFlowHandlers {
-  static void openJohnson(
+  static void openCpm(
     BuildContext context,
     GraphController graphController,
     bool isDarkMode,
@@ -19,7 +19,7 @@ class GraphFlowHandlers {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => JohnsonScreen(
+        builder: (context) => CpmScreen(
           nodes: graphController.nodes,
           edges: graphController.edges,
           isDarkMode: isDarkMode,

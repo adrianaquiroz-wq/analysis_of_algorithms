@@ -9,7 +9,7 @@ class GraphDrawer extends StatelessWidget {
   final VoidCallback onOpenSavedGraphs;
   final VoidCallback onLinearAssignment;
   final VoidCallback onBipartiteAssignment;
-  final VoidCallback onJohnsonAlgorithm;
+  final VoidCallback onCpmAlgorithm;
   final VoidCallback onOpenHelp;
   final bool isLinearAssignmentActive;
   final bool isBipartiteAssignmentActive;
@@ -24,7 +24,7 @@ class GraphDrawer extends StatelessWidget {
     required this.onOpenSavedGraphs,
     required this.onLinearAssignment,
     required this.onBipartiteAssignment,
-    required this.onJohnsonAlgorithm,
+    required this.onCpmAlgorithm,
     required this.onOpenHelp,
     this.isLinearAssignmentActive = false,
     this.isBipartiteAssignmentActive = false,
@@ -154,14 +154,14 @@ class GraphDrawer extends StatelessWidget {
           const Divider(),
 
           ListTile(
-            leading: const Icon(Icons.route, color: Colors.black),
+            leading: const Icon(Icons.timeline, color: Colors.black),
             title: const Text(
-              'Método Johnson',
+              'Método CPM (Ruta Crítica)',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             onTap: () {
               Navigator.pop(context);
-              onJohnsonAlgorithm();
+              onCpmAlgorithm();
             },
           ),
           const Divider(),

@@ -244,7 +244,7 @@ class _GraphScreenState extends State<GraphScreen>
         onOpenSavedGraphs: _openSavedGraphs,
         onLinearAssignment: _selectLinearAssignmentMode,
         onBipartiteAssignment: _selectBipartiteAssignmentMode,
-        onJohnsonAlgorithm: () => GraphFlowHandlers.openJohnson(
+        onCpmAlgorithm: () => GraphFlowHandlers.openCpm(
           context,
           graphController,
           isDarkMode,
