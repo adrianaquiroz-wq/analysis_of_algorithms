@@ -6,6 +6,8 @@ import '../screens/adjacency_matrix_screen.dart';
 
 import '../screens/bipartite_matrix_screen.dart';
 
+import '../screens/northwest_corner_screen.dart';
+
 class GraphFlowHandlers {
   static void openLinearAssignment(
     BuildContext context,
@@ -50,6 +52,23 @@ class GraphFlowHandlers {
           isDarkMode: isDarkMode,
 
           isBipartiteMode: true,
+        ),
+      ),
+    );
+  }
+
+  static void openNorthwestCorner(
+    BuildContext context,
+    GraphController graphController,
+    bool isDarkMode,
+  ) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => NorthwestCornerScreen(
+          nodes: graphController.nodes,
+          edges: graphController.edges,
+          isDarkMode: isDarkMode,
         ),
       ),
     );

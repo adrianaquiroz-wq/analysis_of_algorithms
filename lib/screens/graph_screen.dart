@@ -417,24 +417,49 @@ class _GraphScreenState extends State<GraphScreen>
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: isDarkMode ? const Color(0xFF334155) : Colors.white,
-        foregroundColor: isDarkMode ? Colors.cyanAccent : Colors.blueAccent,
-        elevation: isDarkMode ? 4 : 2,
-        tooltip: "Ver Matriz / Resultados",
-        child: Icon(
-          Icons.grid_view_rounded,
-          color: isDarkMode ? Colors.cyanAccent : Colors.blueAccent,
-        ),
-        onPressed: () {
-          GraphFlowHandlers.handleMatrixButtonPress(
-            context: context,
-            graphController: graphController,
-            isDarkMode: isDarkMode,
-            isLinearFlow: _isLinearAssignmentFlow,
-            isBipartiteFlow: _isBipartiteAssignmentFlow,
-          );
-        },
+      floatingActionButton: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton(
+            heroTag: 'matrixResultsButton',
+            backgroundColor: isDarkMode ? const Color(0xFF334155) : Colors.white,
+            foregroundColor: isDarkMode ? Colors.cyanAccent : Colors.blueAccent,
+            elevation: isDarkMode ? 4 : 2,
+            tooltip: "Ver Matriz / Resultados",
+            child: Icon(
+              Icons.grid_view_rounded,
+              color: isDarkMode ? Colors.cyanAccent : Colors.blueAccent,
+            ),
+            onPressed: () {
+              GraphFlowHandlers.handleMatrixButtonPress(
+                context: context,
+                graphController: graphController,
+                isDarkMode: isDarkMode,
+                isLinearFlow: _isLinearAssignmentFlow,
+                isBipartiteFlow: _isBipartiteAssignmentFlow,
+              );
+            },
+          ),
+          const SizedBox(width: 12),
+          FloatingActionButton(
+            heroTag: 'northwestCornerButton',
+            backgroundColor: isDarkMode ? const Color(0xFF334155) : Colors.white,
+            foregroundColor: isDarkMode ? Colors.cyanAccent : Colors.blueAccent,
+            elevation: isDarkMode ? 4 : 2,
+            tooltip: "Northwest Corner",
+            child: Icon(
+              Icons.alt_route_rounded,
+              color: isDarkMode ? Colors.cyanAccent : Colors.blueAccent,
+            ),
+            onPressed: () {
+              GraphFlowHandlers.openNorthwestCorner(
+                context,
+                graphController,
+                isDarkMode,
+              );
+            },
+          ),
+        ],
       ),
     );
   }
