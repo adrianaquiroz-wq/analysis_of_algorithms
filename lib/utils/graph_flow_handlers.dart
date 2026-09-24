@@ -8,7 +8,26 @@ import '../screens/bipartite_matrix_screen.dart';
 
 import '../screens/northwest_corner_screen.dart';
 
+import '../screens/johnson_screen.dart';
+
 class GraphFlowHandlers {
+  static void openJohnson(
+    BuildContext context,
+    GraphController graphController,
+    bool isDarkMode,
+  ) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => JohnsonScreen(
+          nodes: graphController.nodes,
+          edges: graphController.edges,
+          isDarkMode: isDarkMode,
+        ),
+      ),
+    );
+  }
+
   static void openLinearAssignment(
     BuildContext context,
 
