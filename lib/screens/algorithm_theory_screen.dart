@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'graph_screen.dart';
 
@@ -7,8 +8,9 @@ class AlgorithmTheoryScreen extends StatelessWidget {
   final String theoryDescription;
   final IconData icon;
   final bool isDarkMode;
-  final String algorithmType; // <-- Añadido para recibir el tipo de algoritmo
-  final bool isBipartite; // <-- Añadido para saber si es bipartito
+  final String algorithmType; // Recibe el tipo de algoritmo
+  final bool isBipartite; // Recibe si es bipartito
+  final String youtubeUrl; // <-- Nuevo parámetro para el enlace de YouTube
 
   const AlgorithmTheoryScreen({
     Key? key,
@@ -18,6 +20,7 @@ class AlgorithmTheoryScreen extends StatelessWidget {
     required this.isDarkMode,
     required this.algorithmType,
     required this.isBipartite,
+    required this.youtubeUrl, // <-- Requerido en el constructor
   }) : super(key: key);
 
   @override
@@ -74,10 +77,43 @@ class AlgorithmTheoryScreen extends StatelessWidget {
               ),
               child: Text(
                 theoryDescription,
+                textAlign: TextAlign
+                    .justify, // <-- Costados rectos alineados formalmente
                 style: TextStyle(color: textColor, fontSize: 15, height: 1.5),
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 20),
+
+            // --- BOTÓN DE YOUTUBE ---
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red.withValues(alpha: 0.1),
+                  foregroundColor: Colors.redAccent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: const BorderSide(color: Colors.redAccent, width: 0.5),
+                  ),
+                ),
+                icon: const Icon(
+                  Icons.play_circle_fill_rounded,
+                  color: Colors.redAccent,
+                ),
+                label: const Text(
+                  'Ver explicación en YouTube',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                ),
+                onPressed: () {
+                  if (youtubeUrl.isNotEmpty) {
+                    _launchYouTubeUrl(youtubeUrl);
+                  }
+                },
+              ),
+            ),
+
+            const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -95,7 +131,6 @@ class AlgorithmTheoryScreen extends StatelessWidget {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 onPressed: () {
-                  // Navega al editor del grafo pasando los parámetros limpios
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -113,5 +148,12 @@ class AlgorithmTheoryScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _launchYouTubeUrl(String urlString) async {
+    final Uri url = Uri.parse(urlString);
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      throw Exception('No se pudo abrir el enlace $url');
+    }
   }
 }

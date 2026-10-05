@@ -16,14 +16,19 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isDarkMode = true;
   int _currentIndex = 0;
 
-  final List<Map<String, dynamic>> algorithms = [
+  final List<Map<String, dynamic>> algorithmList = [
     {
       'title': 'Simple graph',
       'subtitle': 'Lienzo abierto con un solo tipo de nodo estándar',
       'icon': Icons.hub_rounded,
       'algorithmType': 'free',
       'isBipartite': false,
-      'theory': 'Permite crear grafos generales sin restricciones. Utiliza un único tipo de nodo estándar para modelado libre de redes y adyacencia.',
+      'theory':
+          'El grafo simple o lienzo libre constituye la estructura fundamental para el modelado de redes y sistemas discretos. '
+          'Permite la creación de grafos generales sin restricciones estrictas de conectividad, haciendo uso de un único tipo de nodo estándar. '
+          'Es la herramienta ideal para la experimentación abierta, el diseño de topologías de red, el análisis exploratorio de adyacencia '
+          'y la representación visual de relaciones generales entre entidades sin la rigurosidad de restricciones matemáticas complejas.',
+      'youtubeUrl': 'https://www.youtube.com/watch?v=TU_ENLACE_SIMPLE', // Reemplaza con tu enlace real
     },
     {
       'title': 'Allocation algorithm',
@@ -31,7 +36,12 @@ class _HomeScreenState extends State<HomeScreen> {
       'icon': Icons.psychology_rounded,
       'algorithmType': 'assignment',
       'isBipartite': true,
-      'theory': 'El algoritmo de asignación (Método Húngaro) resuelve la distribución óptima de recursos utilizando matrices de costos. Requiere dos tipos de nodos (Conjunto A y Conjunto B).',
+      'theory':
+          'El algoritmo de asignación, fundamentado en el clásico Método Húngaro, resuelve problemas avanzados de optimización '
+          'enfocados en encontrar la distribución más eficiente de recursos (como operarios a tareas, o maquinaria a procesos) minimizando los costos totales '
+          'o maximizando los rendimientos. Opera estrictamente bajo una arquitectura bipartita dividida en dos conjuntos de nodos disjuntos (Conjunto A y Conjunto B), '
+          'garantizando una correspondencia uno a uno matemáticamente precisa a través de matrices de costos.',
+      'youtubeUrl': 'https://www.youtube.com/watch?v=AwCyr6srBEg',
     },
     {
       'title': 'CPM (critical path)',
@@ -39,7 +49,12 @@ class _HomeScreenState extends State<HomeScreen> {
       'icon': Icons.memory_rounded,
       'algorithmType': 'cpm',
       'isBipartite': false,
-      'theory': 'El Método del Camino Crítico (CPM) analiza las dependencias de tareas en un proyecto utilizando un solo tipo de nodo para calcular la ruta más larga y tiempos críticos.',
+      'theory':
+          'El Método del Camino Crítico (CPM) es una técnica analítica de gestión y control empleada para la planificación de proyectos complejos. '
+          'Utiliza un único tipo de nodo estándar para modelar las tareas y sus dependencias secuenciales en el tiempo. '
+          'Su función principal es calcular la duración total estimada del proyecto mediante la identificación de la ruta más larga de actividades críticas, '
+          'determinando con precisión las holguras y los márgenes de flexibilidad operativos para cada fase.',
+      'youtubeUrl': 'https://www.youtube.com/watch?v=NGQzWqFE-RY',
     },
     {
       'title': 'Northwest Corner',
@@ -47,7 +62,12 @@ class _HomeScreenState extends State<HomeScreen> {
       'icon': Icons.smart_toy_rounded,
       'algorithmType': 'northwest',
       'isBipartite': true,
-      'theory': 'El método de la Esquina Noroeste genera una solución factible inicial para problemas de transporte asignando recursos de manera sistemática entre dos tipos de nodos.',
+      'theory':
+          'El método de la Esquina Noroeste es una regla heurística fundamental en la investigación de operaciones para resolver problemas de transporte, '
+          'generando una solución factible inicial de manera rápida y sistemática. Funciona estructurando una matriz de distribución basada en dos tipos de nodos '
+          'que representan la oferta (orígenes) y la demanda (destinos), asignando los flujos de recursos desde la esquina superior izquierda (noroccidental) '
+          'hacia las celdas adyacentes hasta agotar las disponibilidades de la red.',
+      'youtubeUrl': 'https://www.youtube.com/watch?v=IyogQ4noci0',
     },
   ];
 
@@ -345,9 +365,9 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 200,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                itemCount: algorithms.length,
+                itemCount: algorithmList.length,
                 itemBuilder: (context, index) {
-                  final algo = algorithms[index];
+                  final algo = algorithmList[index];
                   return Container(
                     width: 260,
                     margin: const EdgeInsets.only(right: 14),
@@ -386,6 +406,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   isDarkMode: isDarkMode,
                                   algorithmType: algo['algorithmType'],
                                   isBipartite: algo['isBipartite'],
+                                  youtubeUrl: algo['youtubeUrl'],
                                 ),
                               ),
                             );
