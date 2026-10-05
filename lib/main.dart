@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:graph_app/screens/home_screen.dart';
 
-import 'screens/graph_screen.dart';
+//import 'screens/graph_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,7 +19,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const GraphScreen(),
+      home: const HomeScreen(),
     );
   }
 }

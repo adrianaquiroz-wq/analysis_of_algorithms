@@ -19,7 +19,18 @@ import '../services/graph_storage_service.dart';
 import '../utils/graph_storage_dialogs.dart';
 
 class GraphScreen extends StatefulWidget {
-  const GraphScreen({super.key});
+  final bool initialLinearAssignment;
+  final bool initialBipartiteAssignment;
+  final String algorithmType; // 'free', 'assignment', 'cpm', 'northwest'
+  final String algorithmTitle;
+
+  const GraphScreen({
+    super.key,
+    this.initialLinearAssignment = false,
+    this.initialBipartiteAssignment = false,
+    this.algorithmType = 'free',
+    this.algorithmTitle = 'Lienzo Libre',
+  });
 
   @override
   State<GraphScreen> createState() => _GraphScreenState();
@@ -43,11 +54,18 @@ class _GraphScreenState extends State<GraphScreen>
   @override
   bool isDarkMode = true;
 
-  bool _isLinearAssignmentFlow = false;
-  bool _isBipartiteAssignmentFlow = false;
+  late bool _isLinearAssignmentFlow;
+  late bool _isBipartiteAssignmentFlow;
+  late String _algorithmType;
 
-  // Expone al mixin si el flujo bipartido está activo, para que
-  // handleCanvasTapDown sepa asignar Conjunto A / Conjunto B al crear nodos.
+  @override
+  void initState() {
+    super.initState();
+    _isLinearAssignmentFlow = widget.initialLinearAssignment;
+    _isBipartiteAssignmentFlow = widget.initialBipartiteAssignment;
+    _algorithmType = widget.algorithmType;
+  }
+
   @override
   bool get isBipartiteMode => _isBipartiteAssignmentFlow;
 
@@ -114,36 +132,6 @@ class _GraphScreenState extends State<GraphScreen>
     });
   }
 
-  void _selectLinearAssignmentMode() {
-    setState(() {
-      _isLinearAssignmentFlow = true;
-      _isBipartiteAssignmentFlow = false;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Modo Asignación Lineal activado. Edita tu grafo y presiona el botón de matriz para calcular.',
-        ),
-        duration: Duration(seconds: 3),
-      ),
-    );
-  }
-
-  void _selectBipartiteAssignmentMode() {
-    setState(() {
-      _isBipartiteAssignmentFlow = true;
-      _isLinearAssignmentFlow = false;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Modo Asignación Bipartida activado. Dibuja tus nodos en conjuntos y presiona el botón de matriz.',
-        ),
-        duration: Duration(seconds: 3),
-      ),
-    );
-  }
-
   Future<void> _startNewCanvas() async {
     final hasContent =
         graphController.nodes.isNotEmpty || graphController.edges.isNotEmpty;
@@ -198,6 +186,7 @@ class _GraphScreenState extends State<GraphScreen>
       _currentGraphName = null;
       _isLinearAssignmentFlow = false;
       _isBipartiteAssignmentFlow = false;
+      _algorithmType = 'free';
     });
 
     if (mounted) {
@@ -213,10 +202,19 @@ class _GraphScreenState extends State<GraphScreen>
         : const Color.fromARGB(255, 81, 101, 120);
     final appBarColor = isDarkMode ? const Color(0xFF0F172A) : Colors.white;
 
+    // Banderas de validación para cada modo / algoritmo
+    final bool showAssignmentMatrixButton =
+        (_algorithmType == 'assignment' ||
+        _isLinearAssignmentFlow ||
+        _isBipartiteAssignmentFlow);
+    final bool showNorthwestButton = (_algorithmType == 'northwest');
+    final bool showCpmButton = (_algorithmType == 'cpm');
+
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: GraphAppBar(
         isDarkMode: isDarkMode,
+        titleText: widget.algorithmTitle,
         canUndo: undoStack.isNotEmpty,
         canRedo: redoStack.isNotEmpty,
         canPaste: clipboardNodes.isNotEmpty,
@@ -231,9 +229,8 @@ class _GraphScreenState extends State<GraphScreen>
       ),
       drawer: GraphDrawer(
         isDarkMode: isDarkMode,
+        algorithmTitle: widget.algorithmTitle,
         onThemeChanged: (value) => setState(() => isDarkMode = value),
-        isLinearAssignmentActive: _isLinearAssignmentFlow,
-        isBipartiteAssignmentActive: _isBipartiteAssignmentFlow,
         onOpenAdjacencyMatrix: () => GraphFlowHandlers.openAdjacencyMatrix(
           context,
           graphController,
@@ -242,13 +239,6 @@ class _GraphScreenState extends State<GraphScreen>
         onNewCanvas: _startNewCanvas,
         onSaveGraph: _saveCurrentGraph,
         onOpenSavedGraphs: _openSavedGraphs,
-        onLinearAssignment: _selectLinearAssignmentMode,
-        onBipartiteAssignment: _selectBipartiteAssignmentMode,
-        onCpmAlgorithm: () => GraphFlowHandlers.openCpm(
-          context,
-          graphController,
-          isDarkMode,
-        ),
         onOpenHelp: () {
           Navigator.push(
             context,
@@ -256,6 +246,9 @@ class _GraphScreenState extends State<GraphScreen>
               builder: (context) => HelpScreen(isDarkMode: isDarkMode),
             ),
           );
+        },
+        onBackHome: () {
+          Navigator.popUntil(context, (route) => route.isFirst);
         },
       ),
       body: Stack(
@@ -396,8 +389,7 @@ class _GraphScreenState extends State<GraphScreen>
             child: RightToolbar(
               isOpen: _isRightPanelOpen,
               isDarkMode: isDarkMode,
-              isBipartiteMode:
-                  _isBipartiteAssignmentFlow, // <--- Pasamos el estado aquí
+              isBipartiteMode: _isBipartiteAssignmentFlow,
               onToggle: () =>
                   setState(() => _isRightPanelOpen = !_isRightPanelOpen),
               activeTool: activeTool,
@@ -407,11 +399,9 @@ class _GraphScreenState extends State<GraphScreen>
                   graphController.clearSelection();
                 });
               },
-              // Opcional: Si el botón extra selecciona una herramienta especial para conjuntos bipartitos
               onSelectBipartiteTool: (tool) {
                 setState(() {
-                  activeTool =
-                      tool; // Ej: 'node_set_b' o la herramienta que uses
+                  activeTool = tool;
                   graphController.clearSelection();
                 });
               },
@@ -420,50 +410,92 @@ class _GraphScreenState extends State<GraphScreen>
               onZoomReset: () => zoomReset(kBoardSize),
             ),
           ),
-        ],
-      ),
-      floatingActionButton: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton(
-            heroTag: 'matrixResultsButton',
-            backgroundColor: isDarkMode ? const Color(0xFF334155) : Colors.white,
-            foregroundColor: isDarkMode ? Colors.cyanAccent : Colors.blueAccent,
-            elevation: isDarkMode ? 4 : 2,
-            tooltip: "Ver Matriz / Resultados",
-            child: Icon(
-              Icons.grid_view_rounded,
-              color: isDarkMode ? Colors.cyanAccent : Colors.blueAccent,
+          // Botón flotante exclusivo para Modo Asignación
+          if (showAssignmentMatrixButton)
+            Positioned(
+              right: 16,
+              bottom: 60,
+              child: FloatingActionButton(
+                heroTag: 'matrixResultsButton',
+                backgroundColor: isDarkMode
+                    ? const Color(0xFF334155)
+                    : Colors.white,
+                foregroundColor: isDarkMode
+                    ? Colors.cyanAccent
+                    : Colors.blueAccent,
+                elevation: isDarkMode ? 4 : 2,
+                tooltip: "Ver Matriz / Resultados de Asignación",
+                child: Icon(
+                  Icons.grid_view_rounded,
+                  color: isDarkMode ? Colors.cyanAccent : Colors.blueAccent,
+                ),
+                onPressed: () {
+                  GraphFlowHandlers.handleMatrixButtonPress(
+                    context: context,
+                    graphController: graphController,
+                    isDarkMode: isDarkMode,
+                    isLinearFlow: _isLinearAssignmentFlow,
+                    isBipartiteFlow: _isBipartiteAssignmentFlow,
+                  );
+                },
+              ),
             ),
-            onPressed: () {
-              GraphFlowHandlers.handleMatrixButtonPress(
-                context: context,
-                graphController: graphController,
-                isDarkMode: isDarkMode,
-                isLinearFlow: _isLinearAssignmentFlow,
-                isBipartiteFlow: _isBipartiteAssignmentFlow,
-              );
-            },
-          ),
-          const SizedBox(width: 12),
-          FloatingActionButton(
-            heroTag: 'northwestCornerButton',
-            backgroundColor: isDarkMode ? const Color(0xFF334155) : Colors.white,
-            foregroundColor: isDarkMode ? Colors.cyanAccent : Colors.blueAccent,
-            elevation: isDarkMode ? 4 : 2,
-            tooltip: "Northwest Corner",
-            child: Icon(
-              Icons.alt_route_rounded,
-              color: isDarkMode ? Colors.cyanAccent : Colors.blueAccent,
+          // Botón flotante exclusivo para Modo Northwest (Esquina Noroeste)
+          if (showNorthwestButton)
+            Positioned(
+              right: 16,
+              bottom: 60,
+              child: FloatingActionButton(
+                heroTag: 'northwestCornerButton',
+                backgroundColor: isDarkMode
+                    ? const Color(0xFF334155)
+                    : Colors.white,
+                foregroundColor: isDarkMode
+                    ? Colors.cyanAccent
+                    : Colors.blueAccent,
+                elevation: isDarkMode ? 4 : 2,
+                tooltip: "Esquina Noroeste",
+                child: Icon(
+                  Icons.alt_route_rounded,
+                  color: isDarkMode ? Colors.cyanAccent : Colors.blueAccent,
+                ),
+                onPressed: () {
+                  GraphFlowHandlers.openNorthwestCorner(
+                    context,
+                    graphController,
+                    isDarkMode,
+                  );
+                },
+              ),
             ),
-            onPressed: () {
-              GraphFlowHandlers.openNorthwestCorner(
-                context,
-                graphController,
-                isDarkMode,
-              );
-            },
-          ),
+          // Botón flotante exclusivo para Modo CPM (Ruta Crítica)
+          if (showCpmButton)
+            Positioned(
+              right: 16,
+              bottom: 60,
+              child: FloatingActionButton(
+                heroTag: 'cpmResolutionButton',
+                backgroundColor: isDarkMode
+                    ? const Color(0xFF334155)
+                    : Colors.white,
+                foregroundColor: isDarkMode
+                    ? Colors.cyanAccent
+                    : Colors.blueAccent,
+                elevation: isDarkMode ? 4 : 2,
+                tooltip: "Método CPM (Ruta Crítica)",
+                child: Icon(
+                  Icons.account_tree_rounded,
+                  color: isDarkMode ? Colors.cyanAccent : Colors.blueAccent,
+                ),
+                onPressed: () {
+                  GraphFlowHandlers.openCpm(
+                    context,
+                    graphController,
+                    isDarkMode,
+                  );
+                },
+              ),
+            ),
         ],
       ),
     );

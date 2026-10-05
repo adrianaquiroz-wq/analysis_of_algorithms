@@ -7,12 +7,9 @@ class GraphDrawer extends StatelessWidget {
   final VoidCallback onNewCanvas;
   final VoidCallback onSaveGraph;
   final VoidCallback onOpenSavedGraphs;
-  final VoidCallback onLinearAssignment;
-  final VoidCallback onBipartiteAssignment;
-  final VoidCallback onCpmAlgorithm;
   final VoidCallback onOpenHelp;
-  final bool isLinearAssignmentActive;
-  final bool isBipartiteAssignmentActive;
+  final VoidCallback onBackHome;
+  final String algorithmTitle;
 
   const GraphDrawer({
     super.key,
@@ -22,60 +19,68 @@ class GraphDrawer extends StatelessWidget {
     required this.onNewCanvas,
     required this.onSaveGraph,
     required this.onOpenSavedGraphs,
-    required this.onLinearAssignment,
-    required this.onBipartiteAssignment,
-    required this.onCpmAlgorithm,
     required this.onOpenHelp,
-    this.isLinearAssignmentActive = false,
-    this.isBipartiteAssignmentActive = false,
+    required this.onBackHome,
+    this.algorithmTitle = 'Lienzo General',
   });
 
   @override
   Widget build(BuildContext context) {
-    final appBarColor = isDarkMode ? const Color(0xFF0F172A) : Colors.white;
-    final activeColor = isDarkMode
-        ? const Color(0xFF0E7490)
-        : Colors.blueAccent;
-    final activeTileColor = isDarkMode
-        ? const Color(0xFF0E7490).withOpacity(0.25)
-        : Colors.blueAccent.withOpacity(0.12);
+    final drawerBg = isDarkMode ? const Color(0xFF0F172A) : Colors.white;
+    final textColor = isDarkMode ? Colors.white : Colors.black87;
+    final activeColor = isDarkMode ? Colors.cyanAccent : Colors.blueAccent;
 
     return Drawer(
+      backgroundColor: drawerBg,
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
-            decoration: BoxDecoration(color: appBarColor),
-            child: Text(
-              'ST-GR Menú',
-              style: TextStyle(
-                color: isDarkMode ? Colors.white : const Color(0xFF0F172A),
-                fontSize: 24,
-              ),
+            decoration: BoxDecoration(
+              color: activeColor.withValues(alpha: 0.15),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Icon(Icons.hub_rounded, color: activeColor, size: 32),
+                const SizedBox(height: 8),
+                Text(
+                  'ST-GR / Menú',
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                // 2. Aquí mostramos dinámicamente el nombre del método seleccionado
+                Text(
+                  algorithmTitle,
+                  style: TextStyle(
+                    color: isDarkMode ? Colors.cyanAccent : Colors.white70,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
           SwitchListTile(
-            secondary: Icon(isDarkMode ? Icons.dark_mode : Icons.light_mode),
-            title: const Text('Modo Oscuro'),
+            secondary: Icon(
+              isDarkMode ? Icons.dark_mode : Icons.light_mode,
+              color: activeColor,
+            ),
+            title: Text('Modo Oscuro', style: TextStyle(color: textColor)),
             value: isDarkMode,
             onChanged: onThemeChanged,
           ),
+          const Divider(),
           ListTile(
-            leading: const Icon(Icons.grid_on, color: Colors.black),
-            title: const Text(
-              'Matriz de Adyacencia',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            onTap: () {
-              Navigator.pop(context);
-              onOpenAdjacencyMatrix();
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.note_add, color: Colors.black),
-            title: const Text(
+            leading: Icon(Icons.note_add_rounded, color: activeColor),
+            title: Text(
               'Nuevo Lienzo',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
             ),
             onTap: () {
               Navigator.pop(context);
@@ -83,10 +88,10 @@ class GraphDrawer extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.save, color: Colors.black),
-            title: const Text(
+            leading: Icon(Icons.save_rounded, color: activeColor),
+            title: Text(
               'Guardar Grafo',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
             ),
             onTap: () {
               Navigator.pop(context);
@@ -94,10 +99,10 @@ class GraphDrawer extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.folder_open, color: Colors.black),
-            title: const Text(
+            leading: Icon(Icons.folder_open_rounded, color: activeColor),
+            title: Text(
               'Grafos Guardados',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
             ),
             onTap: () {
               Navigator.pop(context);
@@ -105,82 +110,29 @@ class GraphDrawer extends StatelessWidget {
             },
           ),
           const Divider(),
-
           ListTile(
-            selected: isLinearAssignmentActive,
-            selectedTileColor: activeTileColor,
-            leading: Icon(
-              Icons.account_tree,
-              color: isLinearAssignmentActive ? activeColor : Colors.black,
-            ),
+            leading: Icon(Icons.help_outline_rounded, color: activeColor),
             title: Text(
-              'Asignación Lineal',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: isLinearAssignmentActive ? activeColor : null,
-              ),
-            ),
-            trailing: isLinearAssignmentActive
-                ? Icon(Icons.check_circle, color: activeColor, size: 20)
-                : null,
-            onTap: () {
-              Navigator.pop(context);
-              onLinearAssignment();
-            },
-          ),
-
-          ListTile(
-            selected: isBipartiteAssignmentActive,
-            selectedTileColor: activeTileColor,
-            leading: Icon(
-              Icons.hub,
-              color: isBipartiteAssignmentActive ? activeColor : Colors.black,
-            ),
-            title: Text(
-              'Asignación Bipartida',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: isBipartiteAssignmentActive ? activeColor : null,
-              ),
-            ),
-            trailing: isBipartiteAssignmentActive
-                ? Icon(Icons.check_circle, color: activeColor, size: 20)
-                : null,
-            onTap: () {
-              Navigator.pop(context);
-              onBipartiteAssignment();
-            },
-          ),
-          const Divider(),
-
-          ListTile(
-            leading: const Icon(Icons.timeline, color: Colors.black),
-            title: const Text(
-              'Método CPM (Ruta Crítica)',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            onTap: () {
-              Navigator.pop(context);
-              onCpmAlgorithm();
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(
-              Icons.help_outline,
-              color: Colors.black,
-              size: 20,
-            ),
-            title: const Text(
               'Ayuda',
-              style: TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
             ),
             onTap: () {
               Navigator.pop(context);
               onOpenHelp();
+            },
+          ),
+          ListTile(
+            leading: const Icon(
+              Icons.arrow_back_rounded,
+              color: Colors.orangeAccent,
+            ),
+            title: Text(
+              'Volver al Inicio',
+              style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+            ),
+            onTap: () {
+              Navigator.pop(context);
+              onBackHome();
             },
           ),
         ],

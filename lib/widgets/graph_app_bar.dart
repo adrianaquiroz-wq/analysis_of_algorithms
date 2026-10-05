@@ -11,6 +11,7 @@ class GraphAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onRedo;
   final VoidCallback onClearCanvas;
   final ValueChanged<bool> onThemeChanged;
+  final String titleText; // <-- Nuevo parámetro para el título dinámico
 
   const GraphAppBar({
     super.key,
@@ -24,6 +25,7 @@ class GraphAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.onRedo,
     required this.onClearCanvas,
     required this.onThemeChanged,
+    this.titleText = 'ST-GR', // Valor por defecto si no se pasa nada
   });
 
   @override
@@ -38,7 +40,7 @@ class GraphAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: appBarColor,
       elevation: isDarkMode ? 0 : 1,
       title: Text(
-        'ST-GR', // <-- Nombre de tu app restaurado aquí
+        titleText, // <-- Mostramos el título dinámico aquí
         style: TextStyle(fontWeight: FontWeight.bold, color: textColor),
       ),
       leading: Builder(
@@ -48,12 +50,6 @@ class GraphAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
       ),
       actions: [
-        /*IconButton(
-          icon: const Icon(Icons.content_paste),
-          color: textColor,
-          tooltip: 'Pegar',
-          onPressed: canPaste ? onPaste : null,
-        ),*/
         IconButton(
           icon: const Icon(Icons.undo),
           color: textColor,
