@@ -28,7 +28,9 @@ class _HomeScreenState extends State<HomeScreen> {
           'Permite la creación de grafos generales sin restricciones estrictas de conectividad, haciendo uso de un único tipo de nodo estándar. '
           'Es la herramienta ideal para la experimentación abierta, el diseño de topologías de red, el análisis exploratorio de adyacencia '
           'y la representación visual de relaciones generales entre entidades sin la rigurosidad de restricciones matemáticas complejas.',
-      'youtubeUrl': 'https://www.youtube.com/watch?v=TU_ENLACE_SIMPLE', // Reemplaza con tu enlace real
+      'youtubeUrl': 'https://www.youtube.com/watch?v=TU_ENLACE_SIMPLE',
+      'imageUrl':
+          'assets/images/simple_graph.png', // <-- Imagen para la tarjeta
     },
     {
       'title': 'Allocation algorithm',
@@ -42,6 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
           'o maximizando los rendimientos. Opera estrictamente bajo una arquitectura bipartita dividida en dos conjuntos de nodos disjuntos (Conjunto A y Conjunto B), '
           'garantizando una correspondencia uno a uno matemáticamente precisa a través de matrices de costos.',
       'youtubeUrl': 'https://www.youtube.com/watch?v=AwCyr6srBEg',
+      'imageUrl': 'assets/images/assignment.png', // <-- Imagen para la tarjeta
     },
     {
       'title': 'CPM (critical path)',
@@ -55,6 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
           'Su función principal es calcular la duración total estimada del proyecto mediante la identificación de la ruta más larga de actividades críticas, '
           'determinando con precisión las holguras y los márgenes de flexibilidad operativos para cada fase.',
       'youtubeUrl': 'https://www.youtube.com/watch?v=NGQzWqFE-RY',
+      'imageUrl': 'assets/images/cpm.png', // <-- Imagen para la tarjeta
     },
     {
       'title': 'Northwest Corner',
@@ -68,6 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
           'que representan la oferta (orígenes) y la demanda (destinos), asignando los flujos de recursos desde la esquina superior izquierda (noroccidental) '
           'hacia las celdas adyacentes hasta agotar las disponibilidades de la red.',
       'youtubeUrl': 'https://www.youtube.com/watch?v=IyogQ4noci0',
+      'imageUrl': 'assets/images/northwest.png', // <-- Imagen para la tarjeta
     },
   ];
 
@@ -109,7 +114,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(width: 10),
             Text(
-              'ST-GR / AI Graph Suite',
+              'ST-GR / Graph Suite',
               style: TextStyle(
                 color: textColor,
                 fontSize: 16,
@@ -198,7 +203,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         Text(
                           'Los vértices o nodos son los elementos principales de un grafo. Cada nodo puede identificarse mediante un nombre, número o etiqueta y, dependiendo de la aplicación, puede almacenar información adicional. En el proyecto desarrollado, los nodos fueron utilizados para representar los diferentes elementos del problema y podían contener atributos que permitían diferenciarlos y clasificarlos.',
                           textAlign: TextAlign.justify,
-
                           style: TextStyle(
                             color: isDarkMode ? Colors.white70 : Colors.black54,
                             fontSize: 13,
@@ -253,7 +257,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Ariana Beltran Soliz ',
+                          'Ariana Beltran Soliz',
                           style: TextStyle(
                             color: textColor,
                             fontSize: 16,
@@ -360,9 +364,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 12),
 
-            // --- CARRUSEL HORIZONTAL ---
+            // --- CARRUSEL HORIZONTAL CON IMÁGENES ---
             SizedBox(
-              height: 200,
+              height:
+                  250, // Altura ajustada para dar espacio a la imagen y textos
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: algorithmList.length,
@@ -374,9 +379,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     decoration: BoxDecoration(
                       color: cardColor,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: accentColor.withValues(alpha: 0.3),
-                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: Material(
                       color: Colors.transparent,
@@ -412,49 +421,70 @@ class _HomeScreenState extends State<HomeScreen> {
                             );
                           }
                         },
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    algo['icon'],
-                                    color: accentColor,
-                                    size: 28,
-                                  ),
-                                  const Spacer(),
-                                  Icon(
-                                    Icons.arrow_forward_ios_rounded,
-                                    color: accentColor.withValues(alpha: 0.6),
-                                    size: 16,
-                                  ),
-                                ],
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // ---> IMAGEN DE LA TARJETA <---
+                            ClipRRect(
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(14),
                               ),
-                              const Spacer(),
-                              Text(
-                                algo['title'],
-                                style: TextStyle(
-                                  color: textColor,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
+                              child: Image.asset(
+                                algo['imageUrl'],
+                                height: 110,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  // Fallback por si la imagen tarda en cargar o no existe aún
+                                  return Container(
+                                    height: 110,
+                                    color: accentColor.withValues(alpha: 0.1),
+                                    child: Center(
+                                      child: Icon(
+                                        algo['icon'],
+                                        color: accentColor,
+                                        size: 36,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            // ---> CONTENIDO DE TEXTO <---
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.all(12.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      algo['title'],
+                                      style: TextStyle(
+                                        color: textColor,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      algo['subtitle'],
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: isDarkMode
+                                            ? Colors.white60
+                                            : Colors.black54,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                algo['subtitle'],
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: isDarkMode
-                                      ? Colors.white60
-                                      : Colors.black54,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
