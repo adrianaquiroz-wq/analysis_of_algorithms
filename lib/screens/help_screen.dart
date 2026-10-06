@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HelpScreen extends StatelessWidget {
   final bool isDarkMode;
@@ -16,6 +17,8 @@ class HelpScreen extends StatelessWidget {
     final cardBorderColor = isDarkMode ? Colors.white12 : Colors.black12;
     final textColor = isDarkMode ? Colors.white : Colors.black87;
     final subTextColor = isDarkMode ? Colors.white70 : Colors.black54;
+    final String frase =
+        'Te haré preguntas sobre algoritmos con los siguientes temas: asignación, CPM y la esquina noroeste. Respondeme primero con un: Hola amigo!';
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -188,10 +191,55 @@ class HelpScreen extends StatelessWidget {
             borderColor: cardBorderColor,
             textColor: subTextColor,
           ),
+          const SizedBox(height: 16),
+
+          // Opción 1: Declarando la variable arriba (fuera de la lista de children)
+          const _HelpSectionTitle(title: '6. Help profesional :)'),
+          _HelpCard(
+            content: '• Usa una IA para entender mucho mejor el tema.',
+            cardColor: cardColor,
+            borderColor: cardBorderColor,
+            textColor: subTextColor,
+          ),
+          const SizedBox(height: 15),
+          ElevatedButton.icon(
+            onPressed: () {
+              consultarConIA(frase);
+            },
+            icon: const Icon(Icons.smart_toy),
+            label: const Text('Consultar duda a la IA sobre este tema'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color.fromARGB(
+                255,
+                18,
+                45,
+                118,
+              ), // Descomenta si deseas usar tu color de acento
+              foregroundColor: Colors.white,
+            ),
+          ),
           const SizedBox(height: 30),
         ],
       ),
     );
+  }
+}
+
+void consultarConIA(String contextoActual) async {
+  // Preparamos el mensaje que le llegará a la IA de golpe
+  String promptInicial =
+      "Hola, estoy estudiando algoritmos y este es mi tema actual: '$contextoActual'. Tengo una duda relacionada:";
+
+  // Codificamos el texto para que la URL no falle por espacios o caracteres especiales
+  String encodedPrompt = Uri.encodeComponent(promptInicial);
+
+  // Ejemplo apuntando a una URL de IA o buscador con prompt (puedes adaptarlo a tu servicio)
+  final Uri url = Uri.parse(
+    'https://gemini.google.com/app?q=$encodedPrompt',
+  ); // O un link personalizado si usas tu propia API
+
+  if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+    throw Exception('No se pudo abrir el enlace $url');
   }
 }
 

@@ -29,8 +29,8 @@ class _HomeScreenState extends State<HomeScreen> {
           'Es la herramienta ideal para la experimentación abierta, el diseño de topologías de red, el análisis exploratorio de adyacencia '
           'y la representación visual de relaciones generales entre entidades sin la rigurosidad de restricciones matemáticas complejas.',
       'youtubeUrl': 'https://www.youtube.com/watch?v=TU_ENLACE_SIMPLE',
-      'imageUrl':
-          'assets/images/simple_graph.png', // <-- Imagen para la tarjeta
+      'imageUrl': 'assets/images/simple_graph.png',
+      'requsito': 'Nada', // <-- Imagen para la tarjeta
     },
     {
       'title': 'Allocation algorithm',
@@ -44,7 +44,13 @@ class _HomeScreenState extends State<HomeScreen> {
           'o maximizando los rendimientos. Opera estrictamente bajo una arquitectura bipartita dividida en dos conjuntos de nodos disjuntos (Conjunto A y Conjunto B), '
           'garantizando una correspondencia uno a uno matemáticamente precisa a través de matrices de costos.',
       'youtubeUrl': 'https://www.youtube.com/watch?v=AwCyr6srBEg',
-      'imageUrl': 'assets/images/assignment.png', // <-- Imagen para la tarjeta
+      'imageUrl': 'assets/images/assignment.png',
+      'requisito':
+          'Matriz cuadrada: Debe haber exactamente el mismo número de recursos (ej profesores, máquinas) que de tareas o destinos (ej materias, proyectos). Si tienes 4 profesores y 3 materias, el algoritmo no se puede aplicar directamente.'
+          'Objetivo de optimización: El algoritmo está diseñado por defecto para minimizar costos, tiempos o distancias. (Si quieres maximizar ganancias, debes transformar la matriz multiplicando los valores por -1 o restándoles el valor máximo).'
+          'El problema: ¿Qué pasa si tienes 4 profesores y solo 3 materias?'
+          'La solución: Debes agregar una fila o columna "ficticia" (dummy) con costos en ceros para equilibrar la matriz a un tamaño cuadrado.',
+      // <-- Imagen para la tarjeta
     },
     {
       'title': 'CPM (critical path)',
@@ -58,7 +64,12 @@ class _HomeScreenState extends State<HomeScreen> {
           'Su función principal es calcular la duración total estimada del proyecto mediante la identificación de la ruta más larga de actividades críticas, '
           'determinando con precisión las holguras y los márgenes de flexibilidad operativos para cada fase.',
       'youtubeUrl': 'https://www.youtube.com/watch?v=NGQzWqFE-RY',
-      'imageUrl': 'assets/images/cpm.png', // <-- Imagen para la tarjeta
+      'imageUrl': 'assets/images/cpm.png',
+      'requisito':
+          'Nodo/Actividad: Cada una de las tareas del proyecto con una duración estimada.'
+          'Predecesoras: Tareas que obligatoriamente deben terminar antes de que pueda iniciar otra.'
+          'Ruta Crítica: La secuencia de tareas dependientes que tiene la mayor duración total. Si se retrasa cualquier tarea de esta ruta, se retrasa todo el proyecto (su holgura es cero).'
+          'Holgura (Float/Slack): El margen de tiempo que se puede retrasar una tarea sin afectar la fecha de finalización del proyecto.',
     },
     {
       'title': 'Northwest Corner',
@@ -72,7 +83,13 @@ class _HomeScreenState extends State<HomeScreen> {
           'que representan la oferta (orígenes) y la demanda (destinos), asignando los flujos de recursos desde la esquina superior izquierda (noroccidental) '
           'hacia las celdas adyacentes hasta agotar las disponibilidades de la red.',
       'youtubeUrl': 'https://www.youtube.com/watch?v=IyogQ4noci0',
-      'imageUrl': 'assets/images/northwest.png', // <-- Imagen para la tarjeta
+      'imageUrl': 'assets/images/northwest.png',
+      'requisito':
+          'Orígenes (Oferta): Las fábricas o almacenes que tienen una cantidad limitada de productos disponibles.'
+          'Destinos (Demanda): Los clientes o puntos que necesitan una cantidad exacta de productos.'
+          'La Esquina Noroeste: Es la celda ubicada más arriba y más a la izquierda de nuestra tabla de transporte.'
+          'Cuando la oferta total y la demanda total no son iguales.'
+          'Una vez añadida la fila o columna "ficticia", la suma total de la oferta y de la demanda se nivelan, la matriz vuelve a estar cuadrada o rectangular balanceada, y ya puedes aplicar el método de la Esquina Noroeste (o cualquier otro método de transporte) con total normalidad.',
     },
   ];
 
@@ -151,14 +168,19 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Grafos',
-              style: TextStyle(
-                color: textColor,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+            SizedBox(
+              width: double.infinity,
+              child: Text(
+                'ANÁLISIS DE ALGORITMOS',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 25,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
+
             const SizedBox(height: 12),
 
             Container(
@@ -182,6 +204,50 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 6),
+                        Text(
+                          'El Análisis de Algoritmos es una rama de la informática y de las ciencias de la computación que se encarga de estudiar los procedimientos utilizados para resolver diferentes tipos de problemas. Un algoritmo consiste en una serie de pasos ordenados y definidos que permiten obtener una solución a partir de determinados datos de entrada. El análisis busca determinar si estos procedimientos son correctos y qué tan eficientes son al momento de ejecutarse.',
+                          textAlign: TextAlign.justify,
+                          style: TextStyle(
+                            color: isDarkMode ? Colors.white70 : Colors.black54,
+                            fontSize: 13,
+                          ),
+                        ),
+                        const SizedBox(height: 13),
+                        Text(
+                          'Además, el Análisis de Algoritmos permite evaluar principalmente el tiempo de ejecución, el uso de memoria y la cantidad de recursos necesarios para resolver un problema. De esta manera, es posible comparar diferentes algoritmos y seleccionar el más adecuado según las características del problema. En aplicaciones de optimización, como los algoritmos de asignación, CPM y esquina noroeste, este análisis permite comprender cómo se procesan los datos para obtener soluciones de manera organizada y eficiente.',
+                          textAlign: TextAlign.justify,
+                          style: TextStyle(
+                            color: isDarkMode ? Colors.white70 : Colors.black54,
+                            fontSize: 13,
+                          ),
+                        ),
+                        const SizedBox(height: 13),
+                        Center(
+                          child: Card(
+                            elevation: 0,
+                            clipBehavior: Clip.antiAlias,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16.0),
+                            ),
+                            child: Image.asset(
+                              'assets/images/imag1.png',
+                              width: 300,
+                              // Quitamos 'height' para que respete la proporción vertical natural
+                              fit: BoxFit.fitWidth,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 13),
+                        Text(
+                          'Grafos',
+                          style: TextStyle(
+                            color: textColor,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
                         Text(
                           'La teoría de grafos es una rama de las matemáticas y de las ciencias de la computación que estudia estructuras formadas por elementos y las relaciones existentes entre ellos. Estas estructuras permiten representar de manera abstracta situaciones reales en las que diferentes objetos se encuentran conectados entre sí. Los grafos tienen numerosas aplicaciones en áreas como redes informáticas, sistemas de transporte, redes sociales, planificación, logística, inteligencia artificial y resolución de problemas de optimización.',
                           textAlign: TextAlign.justify,
@@ -215,6 +281,23 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: TextStyle(
                             color: isDarkMode ? Colors.white70 : Colors.black54,
                             fontSize: 13,
+                          ),
+                        ),
+
+                        const SizedBox(height: 13),
+                        Center(
+                          child: Card(
+                            elevation: 0, // Sin sombra (opcional)
+                            clipBehavior: Clip.antiAlias, // Esto redondea los hijos correctamente
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16.0),
+                            ),
+                            child: Image.asset(
+                              'assets/images/imag2.png',
+                              width: 520,
+                              height: 150,
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
                       ],
@@ -367,7 +450,7 @@ class _HomeScreenState extends State<HomeScreen> {
             // --- CARRUSEL HORIZONTAL CON IMÁGENES ---
             SizedBox(
               height:
-                  250, // Altura ajustada para dar espacio a la imagen y textos
+                  260, // Altura ajustada para dar espacio a la imagen y textos
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: algorithmList.length,
@@ -381,7 +464,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       borderRadius: BorderRadius.circular(14),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withOpacity(0.1),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -416,75 +499,100 @@ class _HomeScreenState extends State<HomeScreen> {
                                   algorithmType: algo['algorithmType'],
                                   isBipartite: algo['isBipartite'],
                                   youtubeUrl: algo['youtubeUrl'],
+                                  requisitoDescription: algo['requisito'],
                                 ),
                               ),
                             );
                           }
                         },
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // ---> IMAGEN DE LA TARJETA <---
-                            ClipRRect(
-                              borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(14),
-                              ),
-                              child: Image.asset(
-                                algo['imageUrl'],
-                                height: 110,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  // Fallback por si la imagen tarda en cargar o no existe aún
-                                  return Container(
-                                    height: 110,
-                                    color: accentColor.withValues(alpha: 0.1),
-                                    child: Center(
-                                      child: Icon(
-                                        algo['icon'],
-                                        color: accentColor,
-                                        size: 36,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                            // ---> CONTENIDO DE TEXTO <---
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.all(12.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      algo['title'],
-                                      style: TextStyle(
-                                        color: textColor,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      algo['subtitle'],
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        color: isDarkMode
-                                            ? Colors.white60
-                                            : Colors.black54,
-                                        fontSize: 11,
-                                      ),
-                                    ),
-                                  ],
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: Stack(
+                            children: [
+                              // ---> IMAGEN DE LA TARJETA <---
+                              Positioned.fill(
+                                child: Padding(
+                                  padding: const EdgeInsets.only(
+                                    bottom: 75,
+                                    top: 8,
+                                    left: 8,
+                                    right: 8,
+                                  ),
+                                  child: Image.asset(
+                                    algo['imageUrl'],
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      // Fallback por si la imagen tarda en cargar o no existe aún
+                                      return Center(
+                                        child: Icon(
+                                          algo['icon'],
+                                          color: accentColor,
+                                          size: 40,
+                                        ),
+                                      );
+                                    },
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                              // ---> CONTENIDO DE TEXTO <---
+                              Positioned(
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                child: Container(
+                                  height: 75,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        (isDarkMode
+                                                ? const Color(0xFF0F172A)
+                                                : Colors.white)
+                                            .withValues(alpha: 0.85),
+                                    border: Border(
+                                      top: BorderSide(
+                                        color: accentColor.withValues(
+                                          alpha: 0.2,
+                                        ),
+                                        width: 1,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        algo['title'],
+                                        style: TextStyle(
+                                          color: textColor,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        algo['subtitle'],
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          color: isDarkMode
+                                              ? Colors.white60
+                                              : Colors.black54,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),

@@ -31,7 +31,8 @@ dependencies:
   flutter:
     sdk: flutter
   path_provider: ^2.1.2  # O la versión más reciente compatible
-  file_picker: ^12.1.2    # Para abrir y guardar archivos nativos
+  file_picker: ^12.1.2  
+  url_launcher: ^6.3.3  # Para abrir y guardar archivos nativos
   #saf: ^1.2.3            # (Opcional, pero file_picker suele bastar para la mayoría de plataformas)
 
   # The following adds the Cupertino Icons font to your application.
