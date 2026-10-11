@@ -1,5 +1,5 @@
-import '../models/node_model.dart';
-import '../models/edge_model.dart';
+import '../../../models/node_model.dart';
+import '../../../models/edge_model.dart';
 import '../models/cpm_step.dart';
 
 class CpmResult {
@@ -142,9 +142,7 @@ class CpmAlgorithm {
           activeNodeIds: [u],
           activeEdgeId: viaEdge,
           earliestTimes: Map.of(es),
-          changes: [
-            CpmValueChange(targetId: u, oldValue: 0, newValue: value),
-          ],
+          changes: [CpmValueChange(targetId: u, oldValue: 0, newValue: value)],
         ),
       );
     }
@@ -192,11 +190,7 @@ class CpmAlgorithm {
           earliestTimes: Map.of(es),
           latestTimes: Map.of(ls),
           changes: [
-            CpmValueChange(
-              targetId: u,
-              oldValue: es[u] ?? 0,
-              newValue: value,
-            ),
+            CpmValueChange(targetId: u, oldValue: es[u] ?? 0, newValue: value),
           ],
         ),
       );

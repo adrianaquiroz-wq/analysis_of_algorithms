@@ -3,10 +3,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../models/node_model.dart';
-import '../models/edge_model.dart';
+import '../../../../models/node_model.dart';
+import '../../../../models/edge_model.dart';
 import '../models/johnson_step.dart';
-import '../utils/johnson_algorithm.dart';
+import 'logic/johnson_algorithm.dart';
 import '../widgets/johnson_graph_painter.dart';
 
 class JohnsonScreen extends StatefulWidget {
@@ -509,12 +509,13 @@ class _JohnsonScreenState extends State<JohnsonScreen> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: DataTable(
-              headingRowColor: WidgetStateProperty.all(
-                const Color(0xFF0F172A),
-              ),
+              headingRowColor: WidgetStateProperty.all(const Color(0xFF0F172A)),
               columns: [
                 const DataColumn(
-                  label: Text('u \\ v', style: TextStyle(color: Colors.white38)),
+                  label: Text(
+                    'u \\ v',
+                    style: TextStyle(color: Colors.white38),
+                  ),
                 ),
                 for (final id in ids)
                   DataColumn(

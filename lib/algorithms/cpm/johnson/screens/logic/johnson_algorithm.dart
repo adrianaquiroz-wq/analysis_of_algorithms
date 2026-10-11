@@ -1,6 +1,6 @@
-import '../models/node_model.dart';
-import '../models/edge_model.dart';
-import '../models/johnson_step.dart';
+import '../../../../../models/node_model.dart';
+import '../../../../../models/edge_model.dart';
+import '../../models/johnson_step.dart';
 
 class JohnsonResult {
   final bool hasNegativeCycle;

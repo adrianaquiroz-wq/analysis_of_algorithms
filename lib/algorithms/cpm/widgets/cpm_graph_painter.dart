@@ -1,35 +1,34 @@
 import 'dart:math' as math;
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
-import '../models/edge_model.dart';
-import '../models/johnson_step.dart';
+import '../../../models/edge_model.dart';
+import '../models/cpm_step.dart';
 
-/// Paleta "modo oscuro tecnológico" pedida para el algoritmo.
-class JohnsonPalette {
+/// Paleta "modo oscuro tecnológico" para CPM.
+class CpmPalette {
   static const background = Color(0xFF0F172A);
   static const nodeFill = Color(0xFF1E293B);
   static const nodeBorder = Color(0xFF475569);
   static const edgeIdle = Color(0xFF334155);
   static const textMuted = Color(0xFF94A3B8);
-  static const neonGreen = Color(0xFF39FF88); // camino / distancia final
-  static const neonCyan = Color(0xFF22D3EE); // exploración Dijkstra
-  static const neonAmber = Color(0xFFFBBF24); // repesaje
-  static const neonRed = Color(0xFFFF4D4D); // ciclo negativo
+  static const neonGreen = Color(0xFF39FF88); // ruta crítica
+  static const neonCyan = Color(0xFF22D3EE); // recorrido hacia adelante (ES)
+  static const neonAmber = Color(0xFFFBBF24); // recorrido hacia atrás (LS)
+  static const neonRed = Color(0xFFFF4D4D); // ciclo / error
 }
 
-/// Canvas animado de un paso de Johnson: se encarga de correr el "pulso"
-/// (para el ripple y el destello viajero) y de suavizar la aparición /
-/// desaparición del nodo virtual q.
-class JohnsonAnimatedCanvas extends StatefulWidget {
+/// Canvas animado de un paso de CPM: corre el "pulso" que anima el ripple
+/// de los nodos activos y el destello viajero sobre la arista activa /
+/// crítica.
+class CpmAnimatedCanvas extends StatefulWidget {
   final Size canvasSize;
   final Map<String, Offset> positions;
   final Map<String, String> labels;
   final List<EdgeModel> edges;
-  final JohnsonStep step;
+  final CpmStep step;
 
-  const JohnsonAnimatedCanvas({
+  const CpmAnimatedCanvas({
     super.key,
     required this.canvasSize,
     required this.positions,
@@ -39,13 +38,12 @@ class JohnsonAnimatedCanvas extends StatefulWidget {
   });
 
   @override
-  State<JohnsonAnimatedCanvas> createState() => _JohnsonAnimatedCanvasState();
+  State<CpmAnimatedCanvas> createState() => _CpmAnimatedCanvasState();
 }
 
-class _JohnsonAnimatedCanvasState extends State<JohnsonAnimatedCanvas>
+class _CpmAnimatedCanvasState extends State<CpmAnimatedCanvas>
     with TickerProviderStateMixin {
   late final AnimationController _pulse;
-  late final AnimationController _virtualFade;
 
   @override
   void initState() {
@@ -54,50 +52,38 @@ class _JohnsonAnimatedCanvasState extends State<JohnsonAnimatedCanvas>
       vsync: this,
       duration: const Duration(milliseconds: 1100),
     )..repeat();
-    _virtualFade = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 700),
-      value: widget.step.virtualNodeVisible ? 1 : 0,
-    );
   }
 
   @override
-  void didUpdateWidget(covariant JohnsonAnimatedCanvas oldWidget) {
+  void didUpdateWidget(covariant CpmAnimatedCanvas oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.step != widget.step) {
       _pulse
         ..stop()
         ..value = 0
         ..repeat();
-      if (widget.step.virtualNodeVisible) {
-        _virtualFade.forward();
-      } else {
-        _virtualFade.reverse();
-      }
     }
   }
 
   @override
   void dispose() {
     _pulse.dispose();
-    _virtualFade.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: Listenable.merge([_pulse, _virtualFade]),
+      animation: _pulse,
       builder: (context, _) {
         return CustomPaint(
           size: widget.canvasSize,
-          painter: JohnsonGraphPainter(
+          painter: CpmGraphPainter(
             positions: widget.positions,
             labels: widget.labels,
             edges: widget.edges,
             step: widget.step,
             pulseValue: _pulse.value,
-            virtualNodeOpacity: _virtualFade.value,
           ),
         );
       },
@@ -105,47 +91,43 @@ class _JohnsonAnimatedCanvasState extends State<JohnsonAnimatedCanvas>
   }
 }
 
-class JohnsonGraphPainter extends CustomPainter {
+class CpmGraphPainter extends CustomPainter {
   static const double nodeRadius = 26;
 
   final Map<String, Offset> positions;
   final Map<String, String> labels;
   final List<EdgeModel> edges;
-  final JohnsonStep step;
+  final CpmStep step;
   final double pulseValue; // 0..1, en loop continuo
-  final double virtualNodeOpacity; // 0..1
 
-  JohnsonGraphPainter({
+  CpmGraphPainter({
     required this.positions,
     required this.labels,
     required this.edges,
     required this.step,
     required this.pulseValue,
-    required this.virtualNodeOpacity,
   });
 
   Color get _activeColor {
     switch (step.phase) {
-      case JohnsonPhase.negativeCycle:
-        return JohnsonPalette.neonRed;
-      case JohnsonPhase.reweight:
-      case JohnsonPhase.setup:
-        return JohnsonPalette.neonAmber;
-      case JohnsonPhase.dijkstra:
-      case JohnsonPhase.bellmanFord:
-        return JohnsonPalette.neonCyan;
-      case JohnsonPhase.removeVirtualNode:
-      case JohnsonPhase.done:
-        return JohnsonPalette.neonGreen;
+      case CpmPhase.topoOrder:
+        return CpmPalette.neonRed;
+      case CpmPhase.forwardPass:
+        return CpmPalette.neonCyan;
+      case CpmPhase.backwardPass:
+        return CpmPalette.neonAmber;
+      case CpmPhase.slack:
+      case CpmPhase.criticalPath:
+      case CpmPhase.done:
+        return CpmPalette.neonGreen;
     }
   }
 
   @override
   void paint(Canvas canvas, Size size) {
-    _drawVirtualSpokes(canvas);
     _drawBaseEdges(canvas);
+    _drawCriticalEdges(canvas);
     _drawActiveEdge(canvas);
-    _drawVirtualNode(canvas);
     _drawNodes(canvas);
     _drawRipples(canvas);
   }
@@ -155,7 +137,7 @@ class JohnsonGraphPainter extends CustomPainter {
   // ---------------------------------------------------------------------
   void _drawBaseEdges(Canvas canvas) {
     final paint = Paint()
-      ..color = JohnsonPalette.edgeIdle
+      ..color = CpmPalette.edgeIdle
       ..strokeWidth = 1.6
       ..style = PaintingStyle.stroke;
 
@@ -163,8 +145,46 @@ class JohnsonGraphPainter extends CustomPainter {
       final from = positions[e.sourceId];
       final to = positions[e.targetId];
       if (from == null || to == null) continue;
-      if (e.id == step.activeEdgeId) continue; // esa se dibuja aparte, encima
-      _drawArrow(canvas, from, to, paint, JohnsonPalette.textMuted);
+      if (e.id == step.activeEdgeId) continue;
+      if (step.criticalEdgeIds.contains(e.id)) continue;
+      _drawArrow(canvas, from, to, paint, CpmPalette.textMuted);
+    }
+  }
+
+  /// Ruta crítica: se dibuja siempre con glow verde persistente, no solo
+  /// mientras se calcula.
+  void _drawCriticalEdges(Canvas canvas) {
+    if (step.criticalEdgeIds.isEmpty) return;
+    for (final id in step.criticalEdgeIds) {
+      if (id == step.activeEdgeId) continue; // esa se dibuja aparte, encima
+      final edge = edges
+          .where((e) => e.id == id)
+          .cast<EdgeModel?>()
+          .firstWhere((e) => e != null, orElse: () => null);
+      if (edge == null) continue;
+      final from = positions[edge.sourceId];
+      final to = positions[edge.targetId];
+      if (from == null || to == null) continue;
+
+      final glowPaint = Paint()
+        ..color = CpmPalette.neonGreen.withOpacity(0.45)
+        ..strokeWidth = 4.5
+        ..style = PaintingStyle.stroke
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
+      _drawArrow(
+        canvas,
+        from,
+        to,
+        glowPaint,
+        CpmPalette.neonGreen,
+        drawHead: false,
+      );
+
+      final corePaint = Paint()
+        ..color = CpmPalette.neonGreen
+        ..strokeWidth = 2.2
+        ..style = PaintingStyle.stroke;
+      _drawArrow(canvas, from, to, corePaint, CpmPalette.neonGreen);
     }
   }
 
@@ -173,16 +193,17 @@ class JohnsonGraphPainter extends CustomPainter {
   void _drawActiveEdge(Canvas canvas) {
     final id = step.activeEdgeId;
     if (id == null) return;
-    final edge = edges.where((e) => e.id == id).cast<EdgeModel?>().firstWhere(
-      (e) => e != null,
-      orElse: () => null,
-    );
+    final edge = edges
+        .where((e) => e.id == id)
+        .cast<EdgeModel?>()
+        .firstWhere((e) => e != null, orElse: () => null);
     if (edge == null) return;
     final from = positions[edge.sourceId];
     final to = positions[edge.targetId];
     if (from == null || to == null) return;
 
-    final color = _activeColor;
+    final isCritical = step.criticalEdgeIds.contains(id);
+    final color = isCritical ? CpmPalette.neonGreen : _activeColor;
 
     final glowPaint = Paint()
       ..color = color.withOpacity(0.55)
@@ -251,114 +272,57 @@ class JohnsonGraphPainter extends CustomPainter {
   }
 
   // ---------------------------------------------------------------------
-  // Nodo virtual q y sus aristas temporales (con blur fade)
-  // ---------------------------------------------------------------------
-  void _drawVirtualSpokes(Canvas canvas) {
-    if (virtualNodeOpacity <= 0.01) return;
-    final q = positions[kJohnsonVirtualNodeId];
-    if (q == null) return;
-
-    final blurSigma = (1 - virtualNodeOpacity) * 8;
-    final paint = Paint()
-      ..color = JohnsonPalette.neonAmber.withOpacity(0.35 * virtualNodeOpacity)
-      ..strokeWidth = 1.4
-      ..style = PaintingStyle.stroke
-      ..maskFilter = ui.MaskFilter.blur(BlurStyle.normal, blurSigma);
-
-    for (final entry in positions.entries) {
-      if (entry.key == kJohnsonVirtualNodeId) continue;
-      _drawDashedLine(canvas, q, entry.value, paint, dash: 5, gap: 5);
-    }
-  }
-
-  void _drawVirtualNode(Canvas canvas) {
-    if (virtualNodeOpacity <= 0.01) return;
-    final q = positions[kJohnsonVirtualNodeId];
-    if (q == null) return;
-
-    final blurSigma = (1 - virtualNodeOpacity) * 10;
-    final glow = Paint()
-      ..color = JohnsonPalette.neonAmber.withOpacity(0.5 * virtualNodeOpacity)
-      ..maskFilter = ui.MaskFilter.blur(BlurStyle.normal, 10 + blurSigma);
-    canvas.drawCircle(q, nodeRadius * 0.8, glow);
-
-    final fill = Paint()
-      ..color = JohnsonPalette.nodeFill.withOpacity(virtualNodeOpacity)
-      ..maskFilter = ui.MaskFilter.blur(BlurStyle.normal, blurSigma);
-    canvas.drawCircle(q, nodeRadius * 0.7, fill);
-
-    final border = Paint()
-      ..color = JohnsonPalette.neonAmber.withOpacity(virtualNodeOpacity)
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke
-      ..maskFilter = ui.MaskFilter.blur(BlurStyle.normal, blurSigma);
-    canvas.drawCircle(q, nodeRadius * 0.7, border);
-
-    _drawLabel(
-      canvas,
-      q,
-      'q',
-      JohnsonPalette.neonAmber.withOpacity(virtualNodeOpacity),
-      fontSize: 13,
-    );
-  }
-
-  void _drawDashedLine(
-    Canvas canvas,
-    Offset from,
-    Offset to,
-    Paint paint, {
-    double dash = 6,
-    double gap = 5,
-  }) {
-    final total = (to - from).distance;
-    if (total == 0) return;
-    final unit = (to - from) / total;
-    double covered = 0;
-    while (covered < total) {
-      final segEnd = math.min(covered + dash, total);
-      canvas.drawLine(from + unit * covered, from + unit * segEnd, paint);
-      covered += dash + gap;
-    }
-  }
-
-  // ---------------------------------------------------------------------
-  // Nodos reales
+  // Nodos (eventos)
   // ---------------------------------------------------------------------
   void _drawNodes(Canvas canvas) {
     for (final entry in positions.entries) {
-      if (entry.key == kJohnsonVirtualNodeId) continue;
       final id = entry.key;
       final center = entry.value;
-      final isSettled = step.settledNodeIds.contains(id);
-      final isSource = step.sourceNodeId == id;
+      final isCritical = step.criticalNodeIds.contains(id);
+      final isActive = step.activeNodeIds.contains(id);
 
-      Color fill = JohnsonPalette.nodeFill;
-      Color border = JohnsonPalette.nodeBorder;
+      Color fill = CpmPalette.nodeFill;
+      Color border = CpmPalette.nodeBorder;
 
-      if (isSettled) {
-        fill = JohnsonPalette.neonGreen.withOpacity(0.22);
-        border = JohnsonPalette.neonGreen;
+      if (isCritical) {
+        fill = CpmPalette.neonGreen.withOpacity(0.22);
+        border = CpmPalette.neonGreen;
       }
-      if (isSource) {
-        border = JohnsonPalette.neonCyan;
+      if (isActive && !isCritical) {
+        border = _activeColor;
       }
 
       canvas.drawCircle(
         center,
         nodeRadius,
-        Paint()..color = fill..style = PaintingStyle.fill,
+        Paint()
+          ..color = fill
+          ..style = PaintingStyle.fill,
       );
       canvas.drawCircle(
         center,
         nodeRadius,
         Paint()
           ..color = border
-          ..strokeWidth = isSource ? 3 : 2
+          ..strokeWidth = isCritical ? 3 : 2
           ..style = PaintingStyle.stroke,
       );
 
-      _drawLabel(canvas, center, labels[id] ?? id, Colors.white);
+      // Línea vertical divisoria clásica del diagrama de eventos CPM.
+      canvas.drawLine(
+        center + const Offset(0, -nodeRadius + 3),
+        center + const Offset(0, nodeRadius - 3),
+        Paint()
+          ..color = border.withOpacity(0.5)
+          ..strokeWidth = 1,
+      );
+
+      _drawLabel(
+        canvas,
+        center + const Offset(-8, 0),
+        labels[id] ?? id,
+        Colors.white,
+      );
     }
   }
 
@@ -367,7 +331,7 @@ class JohnsonGraphPainter extends CustomPainter {
     Offset center,
     String text,
     Color color, {
-    double fontSize = 14,
+    double fontSize = 13,
   }) {
     final painter = TextPainter(
       text: TextSpan(
@@ -407,7 +371,6 @@ class JohnsonGraphPainter extends CustomPainter {
           ..strokeWidth = 2.4
           ..style = PaintingStyle.stroke,
       );
-      // Segundo anillo, un poco detrás, para reforzar el efecto "radar".
       final radius2 = nodeRadius + ((t + 0.4) % 1.0) * 34;
       final opacity2 = (1 - ((t + 0.4) % 1.0)).clamp(0.0, 1.0);
       canvas.drawCircle(
@@ -422,23 +385,22 @@ class JohnsonGraphPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant JohnsonGraphPainter oldDelegate) {
+  bool shouldRepaint(covariant CpmGraphPainter oldDelegate) {
     return oldDelegate.step != step ||
         oldDelegate.pulseValue != pulseValue ||
-        oldDelegate.virtualNodeOpacity != virtualNodeOpacity ||
         oldDelegate.positions != positions;
   }
 }
 
-/// Insignia numérica animada (h(v) o distancia) que se posiciona sobre un
-/// nodo. Cuando el valor cambia, anima "número viejo -> número nuevo" con
-/// un pequeño achique + rebote elástico, simulando un contador.
-class JohnsonValueBadge extends StatelessWidget {
+/// Insignia numérica animada (ES, LS u holgura) que se posiciona sobre un
+/// nodo o arista. Cuando el valor cambia, anima "número viejo -> número
+/// nuevo" con un pequeño achique + rebote elástico, simulando un contador.
+class CpmValueBadge extends StatelessWidget {
   final double value;
   final Color color;
   final String prefix;
 
-  const JohnsonValueBadge({
+  const CpmValueBadge({
     super.key,
     required this.value,
     required this.color,
@@ -464,7 +426,7 @@ class JohnsonValueBadge extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
         decoration: BoxDecoration(
-          color: JohnsonPalette.background.withOpacity(0.95),
+          color: CpmPalette.background.withOpacity(0.95),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: color, width: 1.4),
           boxShadow: [

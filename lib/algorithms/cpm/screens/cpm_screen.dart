@@ -3,10 +3,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../models/node_model.dart';
-import '../models/edge_model.dart';
+import '../../../models/node_model.dart';
+import '../../../models/edge_model.dart';
 import '../models/cpm_step.dart';
-import '../utils/cpm_algorithm.dart';
+import '../logic/cpm_algorithm.dart';
 import '../widgets/cpm_graph_painter.dart';
 
 class CpmScreen extends StatefulWidget {

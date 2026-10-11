@@ -8,7 +8,7 @@ import '../screens/bipartite_matrix_screen.dart';
 
 import '../screens/northwest_corner_screen.dart';
 
-import '../screens/cpm_screen.dart';
+import '../algorithms/cpm/screens/cpm_screen.dart';
 
 class GraphFlowHandlers {
   static void openCpm(
