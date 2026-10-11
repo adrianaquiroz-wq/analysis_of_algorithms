@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'algorithm_data.dart';
+//import 'algorithm_data.dart';
+import 'package:graph_app/algorithms/algorithm_registry.dart';
+
 import 'body_text.dart';
 import 'graph_algorithm_card.dart';
 

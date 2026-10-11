@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-
-import '../graph_screen.dart';
-import '../algorithm_theory_screen.dart';
+import 'package:graph_app/algorithms/algorithm_registry.dart';
+import 'package:graph_app/screens/graph/graph_screen.dart';
+import 'package:graph_app/screens/theory/algorithm_theory_screen.dart';
 
 class GraphAlgorithmCard extends StatelessWidget {
-  final Map<String, dynamic> algo;
+  final AlgorithmInfo algo;
   final bool isDarkMode;
   final Color textColor;
   final Color cardColor;
@@ -21,34 +21,15 @@ class GraphAlgorithmCard extends StatelessWidget {
 
   void _open(BuildContext context) {
     // Grafo libre va directo; los demás pasan por la pantalla de teoría
-    if (algo['algorithmType'] == 'free') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const GraphScreen(
+    final Widget screen = algo.id == 'free'
+        ? const GraphScreen(
             initialBipartiteAssignment: false,
             algorithmType: 'free',
             algorithmTitle: 'Grafo Simple / Libre',
-          ),
-        ),
-      );
-    } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => AlgorithmTheoryScreen(
-            algorithmName: algo['title'],
-            theoryDescription: algo['theory'],
-            icon: algo['icon'],
-            isDarkMode: isDarkMode,
-            algorithmType: algo['algorithmType'],
-            isBipartite: algo['isBipartite'],
-            youtubeUrl: algo['youtubeUrl'],
-            requisitoDescription: algo['requisito'],
-          ),
-        ),
-      );
-    }
+          )
+        : AlgorithmTheoryScreen(algorithm: algo);
+
+    Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
   }
 
   @override
@@ -79,17 +60,12 @@ class GraphAlgorithmCard extends StatelessWidget {
               children: [
                 Positioned.fill(
                   child: Padding(
-                    padding: const EdgeInsets.only(
-                      bottom: 75,
-                      top: 8,
-                      left: 8,
-                      right: 8,
-                    ),
+                    padding: const EdgeInsets.fromLTRB(8, 8, 8, 75),
                     child: Image.asset(
-                      algo['imageUrl'],
+                      algo.imageUrl,
                       fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) => Center(
-                        child: Icon(algo['icon'], color: accentColor, size: 40),
+                      errorBuilder: (_, __, ___) => Center(
+                        child: Icon(algo.icon, color: accentColor, size: 40),
                       ),
                     ),
                   ),
@@ -111,7 +87,6 @@ class GraphAlgorithmCard extends StatelessWidget {
                       border: Border(
                         top: BorderSide(
                           color: accentColor.withValues(alpha: 0.2),
-                          width: 1,
                         ),
                       ),
                     ),
@@ -120,7 +95,7 @@ class GraphAlgorithmCard extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          algo['title'],
+                          algo.title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -131,7 +106,7 @@ class GraphAlgorithmCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          algo['subtitle'],
+                          algo.subtitle,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
