@@ -29,15 +29,17 @@ class _NorthwestCornerScreenState extends State<NorthwestCornerScreen> {
   List<OptimizationIteration>? _iterations;
   String? _error;
 
-  List<NodeModel> get _groupA => widget.nodes
-      .where((n) => n.bipartiteGroup == BipartiteGroup.groupA)
-      .toList()
-    ..sort((a, b) => a.id.compareTo(b.id));
+  List<NodeModel> get _groupA =>
+      widget.nodes
+          .where((n) => n.bipartiteGroup == BipartiteGroup.groupA)
+          .toList()
+        ..sort((a, b) => a.id.compareTo(b.id));
 
-  List<NodeModel> get _groupB => widget.nodes
-      .where((n) => n.bipartiteGroup == BipartiteGroup.groupB)
-      .toList()
-    ..sort((a, b) => a.id.compareTo(b.id));
+  List<NodeModel> get _groupB =>
+      widget.nodes
+          .where((n) => n.bipartiteGroup == BipartiteGroup.groupB)
+          .toList()
+        ..sort((a, b) => a.id.compareTo(b.id));
 
   @override
   void initState() {
@@ -46,10 +48,14 @@ class _NorthwestCornerScreenState extends State<NorthwestCornerScreen> {
     final groupB = _groupB;
 
     _supplyControllers = groupA
-        .map((n) => TextEditingController(text: _numericOrDefault(n.attribute1)))
+        .map(
+          (n) => TextEditingController(text: _numericOrDefault(n.attribute1)),
+        )
         .toList();
     _demandControllers = groupB
-        .map((n) => TextEditingController(text: _numericOrDefault(n.attribute2)))
+        .map(
+          (n) => TextEditingController(text: _numericOrDefault(n.attribute2)),
+        )
         .toList();
 
     if (groupA.isNotEmpty && groupB.isNotEmpty) {
@@ -99,8 +105,12 @@ class _NorthwestCornerScreenState extends State<NorthwestCornerScreen> {
           costs: costs,
           supplies: supplies,
           demands: demands,
-          rowNames: groupA.map((n) => n.label.isNotEmpty ? n.label : n.id).toList(),
-          colNames: groupB.map((n) => n.label.isNotEmpty ? n.label : n.id).toList(),
+          rowNames: groupA
+              .map((n) => n.label.isNotEmpty ? n.label : n.id)
+              .toList(),
+          colNames: groupB
+              .map((n) => n.label.isNotEmpty ? n.label : n.id)
+              .toList(),
         );
 
         // Fase 2: Optimización MODI / Salto de la Rana
@@ -121,7 +131,9 @@ class _NorthwestCornerScreenState extends State<NorthwestCornerScreen> {
   List<double> _parseControllers(List<TextEditingController> controllers) {
     final values = <double>[];
     for (final controller in controllers) {
-      final value = double.tryParse(controller.text.trim().replaceAll(',', '.'));
+      final value = double.tryParse(
+        controller.text.trim().replaceAll(',', '.'),
+      );
       if (value == null || value < 0) {
         throw ArgumentError('Valores deben ser >= 0.');
       }
@@ -131,12 +143,16 @@ class _NorthwestCornerScreenState extends State<NorthwestCornerScreen> {
   }
 
   List<List<double>> _buildCostMatrix(
-      List<NodeModel> groupA, List<NodeModel> groupB) {
+    List<NodeModel> groupA,
+    List<NodeModel> groupB,
+  ) {
     final rowIndex = {for (int i = 0; i < groupA.length; i++) groupA[i].id: i};
     final colIndex = {for (int j = 0; j < groupB.length; j++) groupB[j].id: j};
 
     final matrix = List.generate(
-        groupA.length, (_) => List<double>.filled(groupB.length, 0));
+      groupA.length,
+      (_) => List<double>.filled(groupB.length, 0),
+    );
 
     for (final edge in widget.edges) {
       final row = rowIndex[edge.sourceId];
@@ -188,11 +204,13 @@ class _NorthwestCornerScreenState extends State<NorthwestCornerScreen> {
               fillColor: Colors.blue.withValues(alpha: .3),
               children: const [
                 Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12),
-                    child: Text('Minimizar')),
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  child: Text('Minimizar'),
+                ),
                 Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12),
-                    child: Text('Maximizar')),
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  child: Text('Maximizar'),
+                ),
               ],
             ),
           ),
@@ -216,22 +234,40 @@ class _NorthwestCornerScreenState extends State<NorthwestCornerScreen> {
             if (_error != null) ...[
               const SizedBox(height: 16),
               Container(
-                  padding: const EdgeInsets.all(14),
-                  color: Colors.red.withOpacity(0.2),
-                  child: Text(_error!, style: TextStyle(color: text))),
+                padding: const EdgeInsets.all(14),
+                color: Colors.red.withOpacity(0.2),
+                child: Text(_error!, style: TextStyle(color: text)),
+              ),
             ],
             if (_nwResult != null && _iterations != null) ...[
               const SizedBox(height: 20),
-              Text('Fase 1: Esquina Noroeste (Solución Básica Inicial)',
-                  style: TextStyle(
-                      color: text, fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(
+                'Fase 1: Esquina Noroeste (Solución Básica Inicial)',
+                style: TextStyle(
+                  color: text,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 10),
-              _buildMatrixCard(card, text, sub, _nwResult!.allocations,
-                  _nwResult!.total, 'C_1', false),
+              _buildMatrixCard(
+                card,
+                text,
+                sub,
+                _nwResult!.allocations,
+                _nwResult!.total,
+                'C_1',
+                false,
+              ),
               const SizedBox(height: 20),
-              Text('Fase 2: Optimización MODI (Iteraciones)',
-                  style: TextStyle(
-                      color: text, fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(
+                'Fase 2: Optimización MODI (Iteraciones)',
+                style: TextStyle(
+                  color: text,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 10),
               ...List.generate(_iterations!.length, (index) {
                 final iter = _iterations![index];
@@ -258,8 +294,14 @@ class _NorthwestCornerScreenState extends State<NorthwestCornerScreen> {
     );
   }
 
+  // Tabla de transporte: costos (solo lectura, vienen del grafo),
+  // oferta en columna vertical y demanda en fila horizontal.
   Widget _buildSupplyDemandCard(
-      Color card, Color text, Color sub, Color accent) {
+    Color card,
+    Color text,
+    Color sub,
+    Color accent,
+  ) {
     final groupA = _groupA;
     final groupB = _groupB;
 
@@ -267,105 +309,135 @@ class _NorthwestCornerScreenState extends State<NorthwestCornerScreen> {
       return const SizedBox.shrink();
     }
 
+    final costs = _buildCostMatrix(groupA, groupB);
+    final borderColor = sub.withOpacity(0.35);
+
+    String nameOf(NodeModel n) => n.label.isNotEmpty ? n.label : n.id;
+
+    Widget headerCell(String t, {Color? color}) => Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      child: Center(
+        child: Text(
+          t,
+          style: TextStyle(color: color ?? sub, fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
+
+    Widget costCell(double v) => Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      child: Center(
+        child: Text(_format(v), style: TextStyle(color: text, fontSize: 16)),
+      ),
+    );
+
+    Widget inputCell(TextEditingController c, String hint) => Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+      child: TextField(
+        controller: c,
+        textAlign: TextAlign.center,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        style: TextStyle(color: accent, fontWeight: FontWeight.bold),
+        decoration: InputDecoration(hintText: hint, isDense: true),
+      ),
+    );
+
+    final table = Table(
+      defaultColumnWidth: const FixedColumnWidth(90),
+      columnWidths: const {0: FixedColumnWidth(80)},
+      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+      border: TableBorder.all(color: borderColor),
+      children: [
+        // Encabezado: destinos + columna Oferta
+        TableRow(
+          children: [
+            headerCell('O / D'),
+            ...groupB.map((n) => headerCell(nameOf(n))),
+            headerCell('Oferta', color: accent),
+          ],
+        ),
+        // Filas: origen + costos + oferta (vertical)
+        ...List.generate(groupA.length, (i) {
+          return TableRow(
+            children: [
+              headerCell(nameOf(groupA[i]), color: text),
+              ...List.generate(groupB.length, (j) => costCell(costs[i][j])),
+              inputCell(_supplyControllers[i], 'Oferta'),
+            ],
+          );
+        }),
+        // Última fila: demanda (horizontal)
+        TableRow(
+          children: [
+            headerCell('Demanda', color: accent),
+            ...List.generate(
+              groupB.length,
+              (j) => inputCell(_demandControllers[j], 'Demanda'),
+            ),
+            const SizedBox.shrink(),
+          ],
+        ),
+      ],
+    );
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-          color: card, borderRadius: BorderRadius.circular(12)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Oferta y demanda',
+        color: card,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Oferta y demanda',
             style: TextStyle(
-                color: text, fontSize: 17, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 12),
-        Text('Conjunto A — Orígenes / Oferta',
-            style: TextStyle(color: text, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        ...List.generate(groupA.length, (i) {
-          final name =
-              groupA[i].label.isNotEmpty ? groupA[i].label : groupA[i].id;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(children: [
-              Expanded(
-                child: Text(name,
-                    style: TextStyle(
-                        color: text, fontWeight: FontWeight.w600)),
-              ),
-              SizedBox(
-                width: 110,
-                child: TextField(
-                  controller: _supplyControllers[i],
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  style: TextStyle(color: text),
-                  decoration: const InputDecoration(
-                    labelText: 'Oferta',
-                    isDense: true,
-                  ),
-                ),
-              ),
-            ]),
-          );
-        }),
-        const SizedBox(height: 8),
-        Text('Conjunto B — Destinos / Demanda',
-            style: TextStyle(color: text, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        ...List.generate(groupB.length, (i) {
-          final name =
-              groupB[i].label.isNotEmpty ? groupB[i].label : groupB[i].id;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(children: [
-              Expanded(
-                child: Text(name,
-                    style: TextStyle(
-                        color: text, fontWeight: FontWeight.w600)),
-              ),
-              SizedBox(
-                width: 110,
-                child: TextField(
-                  controller: _demandControllers[i],
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  style: TextStyle(color: text),
-                  decoration: const InputDecoration(
-                    labelText: 'Demanda',
-                    isDense: true,
-                  ),
-                ),
-              ),
-            ]),
-          );
-        }),
-      ]),
+              color: text,
+              fontSize: 17,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Los costos vienen del grafo. Edita la oferta (columna) y la demanda (fila).',
+            style: TextStyle(color: sub, fontSize: 12),
+          ),
+          const SizedBox(height: 12),
+          SingleChildScrollView(scrollDirection: Axis.horizontal, child: table),
+        ],
+      ),
     );
   }
 
   Widget _buildMatrixCard(
-      Color cardColor,
-      Color text,
-      Color sub,
-      List<List<double>> matrix,
-      double total,
-      String label,
-      bool isFinal,
-      {int? enteringRow,
-      int? enteringCol,
-      double? theta}) {
+    Color cardColor,
+    Color text,
+    Color sub,
+    List<List<double>> matrix,
+    double total,
+    String label,
+    bool isFinal, {
+    int? enteringRow,
+    int? enteringCol,
+    double? theta,
+  }) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: isFinal ? Border.all(color: Colors.greenAccent, width: 3) : null,
+        border: isFinal
+            ? Border.all(color: Colors.greenAccent, width: 3)
+            : null,
         boxShadow: isFinal
             ? [
                 BoxShadow(
-                    color: Colors.greenAccent.withOpacity(0.2),
-                    blurRadius: 8,
-                    spreadRadius: 2)
+                  color: Colors.greenAccent.withOpacity(0.2),
+                  blurRadius: 8,
+                  spreadRadius: 2,
+                ),
               ]
             : null,
       ),
@@ -375,23 +447,30 @@ class _NorthwestCornerScreenState extends State<NorthwestCornerScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(isFinal ? '¡Resultado Final Óptimo!' : 'Iteración',
-                  style: TextStyle(
-                      color: isFinal ? Colors.greenAccent : text,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold)),
-              Text('$label = ${_format(total)}',
-                  style: const TextStyle(
-                      color: Colors.cyanAccent,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold)),
+              Text(
+                isFinal ? '¡Resultado Final Óptimo!' : 'Iteración',
+                style: TextStyle(
+                  color: isFinal ? Colors.greenAccent : text,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                '$label = ${_format(total)}',
+                style: const TextStyle(
+                  color: Colors.cyanAccent,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
           if (enteringRow != null) ...[
             Text(
-                'Entra a la base: ${_nwResult!.rowNames[enteringRow]} → ${_nwResult!.colNames[enteringCol!]} (θ = ${_format(theta ?? 0)})',
-                style: TextStyle(color: sub)),
+              'Entra a la base: ${_nwResult!.rowNames[enteringRow]} → ${_nwResult!.colNames[enteringCol!]} (θ = ${_format(theta ?? 0)})',
+              style: TextStyle(color: sub),
+            ),
             const SizedBox(height: 12),
           ],
           SingleChildScrollView(
@@ -402,30 +481,48 @@ class _NorthwestCornerScreenState extends State<NorthwestCornerScreen> {
               dataRowMaxHeight: 40,
               columns: [
                 DataColumn(
-                    label: Text('O / D',
-                        style: TextStyle(
-                            color: sub, fontWeight: FontWeight.bold))),
-                ..._nwResult!.colNames.map((c) => DataColumn(
-                    label: Text(c,
-                        style: TextStyle(
-                            color: sub, fontWeight: FontWeight.bold)))),
+                  label: Text(
+                    'O / D',
+                    style: TextStyle(color: sub, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                ..._nwResult!.colNames.map(
+                  (c) => DataColumn(
+                    label: Text(
+                      c,
+                      style: TextStyle(color: sub, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
               ],
               rows: List.generate(matrix.length, (r) {
-                return DataRow(cells: [
-                  DataCell(Text(_nwResult!.rowNames[r],
-                      style:
-                          TextStyle(color: sub, fontWeight: FontWeight.bold))),
-                  ...List.generate(matrix[r].length, (c) {
-                    final val = matrix[r][c];
-                    return DataCell(Text(
-                      val == 0 ? '-' : _format(val),
-                      style: TextStyle(
-                          color: text,
-                          fontWeight:
-                              val > 0 ? FontWeight.bold : FontWeight.normal),
-                    ));
-                  }),
-                ]);
+                return DataRow(
+                  cells: [
+                    DataCell(
+                      Text(
+                        _nwResult!.rowNames[r],
+                        style: TextStyle(
+                          color: sub,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    ...List.generate(matrix[r].length, (c) {
+                      final val = matrix[r][c];
+                      return DataCell(
+                        Text(
+                          val == 0 ? '-' : _format(val),
+                          style: TextStyle(
+                            color: text,
+                            fontWeight: val > 0
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
+                        ),
+                      );
+                    }),
+                  ],
+                );
               }),
             ),
           ),

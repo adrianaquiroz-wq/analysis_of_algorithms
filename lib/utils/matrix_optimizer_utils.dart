@@ -21,6 +21,10 @@ class MatrixResult {
 
   final List<String> assignments;
 
+  // Pares (fila, columna) de las asignaciones óptimas.
+  // Se usan para marcar las celdas en la matriz original.
+  final List<MapEntry<int, int>> assignmentPairs;
+
   final List<MatrixStep> stepByStep;
 
   MatrixResult({
@@ -39,6 +43,8 @@ class MatrixResult {
     required this.assignments,
 
     required this.stepByStep,
+
+    this.assignmentPairs = const [],
   });
 }
 
@@ -146,6 +152,9 @@ class MatrixOptimizerUtils {
 
     List<String> assignmentList = [];
 
+    // Pares (fila, columna) de las asignaciones reales (sin ficticios)
+    final List<MapEntry<int, int>> assignmentPairs = [];
+
     for (var pair in result.assignments) {
       int r = pair['r']!;
 
@@ -161,6 +170,8 @@ class MatrixOptimizerUtils {
         assignmentList.add(
           "Fila ($origin) ➔ Columna ($target) | Peso: ${matrix[r][c]}",
         );
+
+        assignmentPairs.add(MapEntry(r, c));
       }
     }
 
@@ -196,6 +207,8 @@ class MatrixOptimizerUtils {
       calculationSteps: stepsText.toString(),
 
       assignments: assignmentList,
+
+      assignmentPairs: assignmentPairs,
 
       stepByStep: result.steps,
     );
@@ -294,6 +307,9 @@ class MatrixOptimizerUtils {
 
     final List<String> assignmentList = [];
 
+    // Pares (fila, columna) de las asignaciones
+    final List<MapEntry<int, int>> assignmentPairs = [];
+
     for (final pair in result.assignments) {
       final int r = pair['r']!;
       final int c = pair['c']!;
@@ -306,6 +322,8 @@ class MatrixOptimizerUtils {
       assignmentList.add(
         'Fila ($origin) ➔ Columna ($target) | Peso: ${matrix[r][c]}',
       );
+
+      assignmentPairs.add(MapEntry(r, c));
     }
 
     // ============================================================
@@ -335,6 +353,7 @@ class MatrixOptimizerUtils {
       optimalValue: optimalSum,
       calculationSteps: stepsText.toString(),
       assignments: assignmentList,
+      assignmentPairs: assignmentPairs,
       stepByStep: result.steps,
     );
   }

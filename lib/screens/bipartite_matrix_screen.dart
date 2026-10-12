@@ -87,6 +87,155 @@ class _BipartiteMatrixScreenState extends State<BipartiteMatrixScreen> {
     return sum;
   }
 
+  // ============================================================
+  // TARJETA: MATRIZ ORIGINAL CON LAS ASIGNACIONES MARCADAS
+  // ============================================================
+  Widget _buildOriginalMatrixCard(
+    Color cardCol,
+    Color textCol,
+    Color subTextCol,
+  ) {
+    // Conjunto de celdas asignadas con formato "fila,columna"
+    final assigned = _result.assignmentPairs
+        .map((p) => '${p.key},${p.value}')
+        .toSet();
+
+    String fmt(double v) =>
+        v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(2);
+
+    return Card(
+      color: cardCol,
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Matriz Original (con asignaciones marcadas)',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: textCol,
+              ),
+            ),
+
+            const SizedBox(height: 6),
+
+            // Leyenda
+            Row(
+              children: [
+                Container(
+                  width: 16,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: Colors.green.withValues(alpha: 0.25),
+                    border: Border.all(color: Colors.greenAccent, width: 2),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '= Asignación óptima',
+                  style: TextStyle(fontSize: 13, color: subTextCol),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            if (_result.rowNames.isEmpty)
+              Text('Matriz vacía.', style: TextStyle(color: subTextCol))
+            else
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  columns: [
+                    DataColumn(
+                      label: Text(
+                        'Filas / Cols',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: textCol,
+                        ),
+                      ),
+                    ),
+                    ..._result.colNames.map(
+                      (c) => DataColumn(
+                        label: Text(
+                          c,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: textCol,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                  rows: List.generate(_result.rowNames.length, (r) {
+                    final row = r < _result.originalMatrix.length
+                        ? _result.originalMatrix[r]
+                        : <double>[];
+
+                    return DataRow(
+                      cells: [
+                        DataCell(
+                          Text(
+                            _result.rowNames[r],
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: textCol,
+                            ),
+                          ),
+                        ),
+                        ...List.generate(_result.colNames.length, (c) {
+                          final val = c < row.length ? row[c] : 0.0;
+                          final isAssigned = assigned.contains('$r,$c');
+
+                          return DataCell(
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: isAssigned
+                                  ? BoxDecoration(
+                                      color: Colors.green.withValues(
+                                        alpha: 0.25,
+                                      ),
+                                      border: Border.all(
+                                        color: Colors.greenAccent,
+                                        width: 2,
+                                      ),
+                                      borderRadius: BorderRadius.circular(6),
+                                    )
+                                  : null,
+                              child: Text(
+                                fmt(val),
+                                style: TextStyle(
+                                  fontWeight: isAssigned
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                  color: isAssigned
+                                      ? Colors.greenAccent
+                                      : subTextCol,
+                                ),
+                              ),
+                            ),
+                          );
+                        }),
+                      ],
+                    );
+                  }),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final bgCol = widget.isDarkMode
@@ -163,7 +312,6 @@ class _BipartiteMatrixScreenState extends State<BipartiteMatrixScreen> {
             // ========================================================
             // RESUMEN DE ASIGNACIONES ÓPTIMAS
             // ========================================================
-
             Card(
               color: cardCol,
               elevation: 4,
@@ -243,6 +391,13 @@ class _BipartiteMatrixScreenState extends State<BipartiteMatrixScreen> {
                 ),
               ),
             ),
+
+            const SizedBox(height: 20),
+
+            // ========================================================
+            // MATRIZ ORIGINAL CON ASIGNACIONES MARCADAS
+            // ========================================================
+            _buildOriginalMatrixCard(cardCol, textCol, subTextCol),
 
             const SizedBox(height: 20),
 
@@ -342,7 +497,6 @@ class _BipartiteMatrixScreenState extends State<BipartiteMatrixScreen> {
                             // ==================================================
                             // FILAS DE LA MATRIZ
                             // ==================================================
-
                             ...List.generate(_result.rowNames.length, (rIndex) {
                               final row = rIndex < _result.finalMatrix.length
                                   ? _result.finalMatrix[rIndex]
@@ -648,7 +802,6 @@ class _BipartiteMatrixScreenState extends State<BipartiteMatrixScreen> {
                             // ==================================================
                             // FILAS DEL PASO
                             // ==================================================
-
                             ...List.generate(step.rowNames.length, (rIndex) {
                               final List<double> row =
                                   rIndex < step.matrixSnapshot.length
