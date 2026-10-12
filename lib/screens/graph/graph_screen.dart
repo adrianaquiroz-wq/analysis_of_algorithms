@@ -7,7 +7,8 @@ import 'package:graph_app/models/node_model.dart';
 import 'package:graph_app/screens/help/help_screen.dart';
 import 'package:graph_app/theme/theme_builder.dart';
 import 'package:graph_app/theme/theme_controller.dart';
-import 'package:graph_app/utils/graph_flow_handlers.dart';
+//import 'package:graph_app/utils/graph_flow_handlers.dart';
+import 'package:graph_app/screens/adjacency/adjacency_flow.dart';
 import 'package:graph_app/utils/graph_history_mixin.dart';
 import 'package:graph_app/utils/graph_interactions_mixin.dart';
 import 'package:graph_app/utils/graph_screen_actions.dart';
@@ -145,11 +146,8 @@ class _GraphScreenState extends State<GraphScreen>
       isDarkMode: isDarkMode,
       algorithmTitle: widget.algorithmTitle,
       onThemeChanged: ThemeController.instance.set,
-      onOpenAdjacencyMatrix: () => GraphFlowHandlers.openAdjacencyMatrix(
-        context,
-        graphController,
-        isDarkMode,
-      ),
+      onOpenAdjacencyMatrix: () =>
+          openAdjacencyMatrix(context, graphController),
       onNewCanvas: startNewCanvas,
       onSaveGraph: saveCurrentGraph,
       onOpenSavedGraphs: openSavedGraphs,

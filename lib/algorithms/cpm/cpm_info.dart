@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:graph_app/utils/graph_flow_handlers.dart';
 
 import '../algorithm_info.dart';
+import 'cpm_flow.dart';
 
 final AlgorithmInfo cpmInfo = AlgorithmInfo(
   id: 'cpm',
@@ -31,6 +31,6 @@ final AlgorithmInfo cpmInfo = AlgorithmInfo(
       required isDarkMode,
       required isLinearFlow,
       required isBipartiteFlow,
-    }) => GraphFlowHandlers.openCpm(context, controller, isDarkMode),
+    }) => openCpm(context, controller),
   ),
 );

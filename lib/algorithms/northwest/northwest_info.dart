@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:graph_app/utils/graph_flow_handlers.dart';
 
 import '../algorithm_info.dart';
+import 'northwest_flow.dart';
 
 final AlgorithmInfo northwestInfo = AlgorithmInfo(
   id: 'northwest',
@@ -26,17 +26,12 @@ final AlgorithmInfo northwestInfo = AlgorithmInfo(
   solver: SolverAction(
     icon: Icons.alt_route_rounded,
     tooltip: 'Esquina Noroeste',
-    open:
-        (
-          context,
-          controller, {
-          required isDarkMode,
-          required isLinearFlow,
-          required isBipartiteFlow,
-        }) => GraphFlowHandlers.openNorthwestCorner(
-          context,
-          controller,
-          isDarkMode,
-        ),
+    open: (
+      context,
+      controller, {
+      required isDarkMode,
+      required isLinearFlow,
+      required isBipartiteFlow,
+    }) => openNorthwestCorner(context, controller),
   ),
 );

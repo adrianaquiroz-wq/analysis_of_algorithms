@@ -12,14 +12,8 @@ import '../widgets/cpm_graph_painter.dart';
 class CpmScreen extends StatefulWidget {
   final List<NodeModel> nodes;
   final List<EdgeModel> edges;
-  final bool isDarkMode;
 
-  const CpmScreen({
-    super.key,
-    required this.nodes,
-    required this.edges,
-    required this.isDarkMode,
-  });
+  const CpmScreen({super.key, required this.nodes, required this.edges});
 
   @override
   State<CpmScreen> createState() => _CpmScreenState();
@@ -256,7 +250,6 @@ class _CpmScreenState extends State<CpmScreen> {
     );
   }
 
-  /// Sección 2: Tabla Completa de Actividades, Tiempos, Holguras y Ruta Crítica
   /// Sección 2: Tabla Completa de Actividades, Tiempos, Holguras y Ruta Crítica
   Widget _buildActivityTableSection() {
     final esMap = _result!.earliestTimes;

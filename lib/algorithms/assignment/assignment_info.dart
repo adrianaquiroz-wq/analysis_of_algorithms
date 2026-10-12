@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:graph_app/utils/graph_flow_handlers.dart';
 
 import '../algorithm_info.dart';
+import 'assignment_flow.dart';
 
 final AlgorithmInfo assignmentInfo = AlgorithmInfo(
   id: 'assignment',
@@ -32,10 +32,9 @@ final AlgorithmInfo assignmentInfo = AlgorithmInfo(
           required isDarkMode,
           required isLinearFlow,
           required isBipartiteFlow,
-        }) => GraphFlowHandlers.handleMatrixButtonPress(
-          context: context,
-          graphController: controller,
-          isDarkMode: isDarkMode,
+        }) => openAssignmentMatrix(
+          context,
+          controller,
           isLinearFlow: isLinearFlow,
           isBipartiteFlow: isBipartiteFlow,
         ),
