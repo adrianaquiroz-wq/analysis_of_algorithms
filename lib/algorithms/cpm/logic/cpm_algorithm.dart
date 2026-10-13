@@ -26,6 +26,9 @@ class CpmResult {
   /// Historial completo de pasos, listo para reproducir/animar.
   final List<CpmStep> steps;
 
+  /// Orden topológico de los eventos (útil para mostrar las tablas).
+  final List<String> topoOrder;
+
   const CpmResult({
     required this.hasCycle,
     required this.earliestTimes,
@@ -35,6 +38,7 @@ class CpmResult {
     required this.criticalNodeIds,
     required this.projectDuration,
     required this.steps,
+    this.topoOrder = const [],
   });
 }
 
@@ -130,17 +134,28 @@ class CpmAlgorithm {
         }
       }
       es[u] = value;
+      final fwdLines = <String>[];
+      for (final e in preds) {
+        final base = es[e.sourceId] ?? 0;
+        fwdLines.add(
+          '• ${nm(e.sourceId)} → ${nm(u)}:  ES(${nm(e.sourceId)}) + duración = '
+          '${_fmt(base)} + ${_fmt(e.weight)} = ${_fmt(base + e.weight)}',
+        );
+      }
       steps.add(
         CpmStep(
           phase: CpmPhase.forwardPass,
-          title: 'ES(${nm(u)}) = ${_fmt(value)}',
+          title: 'IDA · ES(${nm(u)}) = ${_fmt(value)}',
           description: preds.isEmpty
-              ? '${nm(u)} no tiene actividades previas: su tiempo más '
-                    'temprano es 0.'
-              : 'El tiempo más temprano de ${nm(u)} es el mayor de sus '
-                    'llegadas: ES = ${_fmt(value)}.',
+              ? '${nm(u)} es un evento inicial (no le llega ninguna '
+                    'actividad), así que arranca en 0.\nES(${nm(u)}) = 0'
+              : 'ES = el mayor de los tiempos de llegada (hay que esperar a '
+                    'que termine la actividad más lenta).\n'
+                    '${fwdLines.join('\n')}\n'
+                    'ES(${nm(u)}) = ${preds.length > 1 ? 'máx → ' : ''}${_fmt(value)}',
           activeNodeIds: [u],
           activeEdgeId: viaEdge,
+          candidateEdgeIds: [for (final e in preds) e.id],
           earliestTimes: Map.of(es),
           changes: [CpmValueChange(targetId: u, oldValue: 0, newValue: value)],
         ),
@@ -176,17 +191,30 @@ class CpmAlgorithm {
         }
       }
       ls[u] = value;
+      final bwdLines = <String>[];
+      for (final e in succs) {
+        final lim = ls[e.targetId] ?? double.infinity;
+        bwdLines.add(
+          '• ${nm(u)} → ${nm(e.targetId)}:  LS(${nm(e.targetId)}) − duración = '
+          '${_fmt(lim)} − ${_fmt(e.weight)} = ${_fmt(lim - e.weight)}',
+        );
+      }
       steps.add(
         CpmStep(
           phase: CpmPhase.backwardPass,
-          title: 'LS(${nm(u)}) = ${_fmt(value)}',
+          title: 'VUELTA · LS(${nm(u)}) = ${_fmt(value)}',
           description: succs.isEmpty
-              ? '${nm(u)} es un evento final: su tiempo más tardío coincide '
-                    'con su tiempo más temprano.'
-              : 'El tiempo más tardío de ${nm(u)} es el menor límite que '
-                    'imponen sus actividades siguientes: LS = ${_fmt(value)}.',
+              ? '${nm(u)} es un evento final: no puede haber holgura, así '
+                    'que su tiempo más tardío es igual al más temprano.\n'
+                    'LS(${nm(u)}) = ES(${nm(u)}) = ${_fmt(value)}'
+              : 'LS = el menor de los límites que imponen las actividades '
+                    'siguientes (si te pasás del menor, atrasás el '
+                    'proyecto).\n'
+                    '${bwdLines.join('\n')}\n'
+                    'LS(${nm(u)}) = ${succs.length > 1 ? 'mín → ' : ''}${_fmt(value)}',
           activeNodeIds: [u],
           activeEdgeId: viaEdge,
+          candidateEdgeIds: [for (final e in succs) e.id],
           earliestTimes: Map.of(es),
           latestTimes: Map.of(ls),
           changes: [
@@ -206,14 +234,13 @@ class CpmAlgorithm {
         CpmStep(
           phase: CpmPhase.slack,
           title:
-              'Holgura ${nm(e.sourceId)} → ${nm(e.targetId)} = '
+              'HOLGURA ${nm(e.sourceId)} → ${nm(e.targetId)} = '
               '${_fmt(slack)}',
-          description: isCritical
-              ? 'Holgura 0: esta actividad es crítica, cualquier retraso '
-                    'retrasa todo el proyecto.'
-              : 'Holgura = LS(${nm(e.targetId)}) − ES(${nm(e.sourceId)}) − '
-                    'duración = ${_fmt(slack)}. Hay margen antes de afectar '
-                    'el proyecto.',
+          description:
+              'H = LS(${nm(e.targetId)}) − ES(${nm(e.sourceId)}) − duración\n'
+              'H = ${_fmt(ls[e.targetId] ?? 0)} − ${_fmt(es[e.sourceId] ?? 0)} '
+              '− ${_fmt(e.weight)} = ${_fmt(slack)}\n'
+              '${isCritical ? 'Holgura 0 → actividad CRÍTICA: si se atrasa, se atrasa todo el proyecto.' : 'Holgura > 0 → NO es crítica: se puede atrasar ${_fmt(slack)} sin afectar el proyecto.'}',
           activeEdgeId: e.id,
           activeNodeIds: [e.sourceId, e.targetId],
           earliestTimes: Map.of(es),
@@ -256,14 +283,31 @@ class CpmAlgorithm {
       }
     }
 
+    String criticalSumText() {
+      final ws = <double>[];
+      for (final id in criticalEdges) {
+        for (final e in edges) {
+          if (e.id == id) ws.add(e.weight);
+        }
+      }
+      final total = ws.fold<double>(0, (a, b) => a + b);
+      if (ws.isEmpty || (total - projectDuration).abs() > 1e-9) {
+        return _fmt(projectDuration);
+      }
+      return '${ws.map(_fmt).join(' + ')} = ${_fmt(projectDuration)}';
+    }
+
     steps.add(
       CpmStep(
         phase: CpmPhase.criticalPath,
-        title: 'Ruta crítica',
+        title: 'RUTA CRÍTICA',
         description:
-            'La ruta crítica es la secuencia de actividades con holgura 0: '
-            '${criticalNodes.map(nm).join(' → ')}. Define la duración '
-            'mínima del proyecto.',
+            'Se unen las actividades con holgura 0, desde el inicio hasta '
+            'el final:\n'
+            '${criticalNodes.map(nm).join(' → ')}\n'
+            'Es la cadena más larga: define la duración mínima del '
+            'proyecto.',
+        candidateEdgeIds: criticalEdges,
         activeNodeIds: criticalNodes,
         earliestTimes: Map.of(es),
         latestTimes: Map.of(ls),
@@ -276,12 +320,12 @@ class CpmAlgorithm {
     steps.add(
       CpmStep(
         phase: CpmPhase.done,
-        title: 'Duración total del proyecto: ${_fmt(projectDuration)}',
+        title: 'RESULTADO · Duración total = ${_fmt(projectDuration)}',
         description:
-            'Con el recorrido hacia adelante y hacia atrás completos, el '
-            'proyecto no puede terminar antes de ${_fmt(projectDuration)} '
-            'unidades de tiempo. La ruta crítica queda resaltada en el '
-            'grafo.',
+            'Duración del proyecto = ${criticalSumText()}\n'
+            'Ruta crítica: ${criticalNodes.map(nm).join(' → ')}\n'
+            'Deslizá a la derecha (o tocá el botón de tabla) para ver la '
+            'tabla final paso a paso.',
         earliestTimes: Map.of(es),
         latestTimes: Map.of(ls),
         slacks: Map.of(slacks),
@@ -300,6 +344,7 @@ class CpmAlgorithm {
       criticalNodeIds: criticalNodes,
       projectDuration: projectDuration,
       steps: steps,
+      topoOrder: topoOrder,
     );
   }
 

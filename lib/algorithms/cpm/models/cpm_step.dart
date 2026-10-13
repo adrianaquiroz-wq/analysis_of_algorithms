@@ -48,6 +48,10 @@ class CpmStep {
   /// Holgura vigente por arista (id de arista -> holgura).
   final Map<String, double> slacks;
 
+  /// Aristas que participan en el cálculo del paso actual (por ejemplo,
+  /// todas las que llegan a un evento durante el recorrido hacia adelante).
+  final List<String> candidateEdgeIds;
+
   /// Aristas que ya se confirmaron como parte de la ruta crítica
   /// (holgura = 0). Se dibujan siempre con el trazo líquido, no solo la
   /// activa del paso actual.
@@ -68,6 +72,7 @@ class CpmStep {
     required this.description,
     this.activeNodeIds = const [],
     this.activeEdgeId,
+    this.candidateEdgeIds = const [],
     this.earliestTimes = const {},
     this.latestTimes = const {},
     this.slacks = const {},

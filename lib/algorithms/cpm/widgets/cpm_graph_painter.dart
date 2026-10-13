@@ -92,7 +92,7 @@ class _CpmAnimatedCanvasState extends State<CpmAnimatedCanvas>
 }
 
 class CpmGraphPainter extends CustomPainter {
-  static const double nodeRadius = 26;
+  static const double nodeRadius = 30;
 
   final Map<String, Offset> positions;
   final Map<String, String> labels;
@@ -128,6 +128,7 @@ class CpmGraphPainter extends CustomPainter {
     _drawBaseEdges(canvas);
     _drawCriticalEdges(canvas);
     _drawActiveEdge(canvas);
+    _drawEdgeLabels(canvas);
     _drawNodes(canvas);
     _drawRipples(canvas);
   }
@@ -147,6 +148,14 @@ class CpmGraphPainter extends CustomPainter {
       if (from == null || to == null) continue;
       if (e.id == step.activeEdgeId) continue;
       if (step.criticalEdgeIds.contains(e.id)) continue;
+      if (step.candidateEdgeIds.contains(e.id)) {
+        final cand = Paint()
+          ..color = _activeColor.withOpacity(0.75)
+          ..strokeWidth = 2.2
+          ..style = PaintingStyle.stroke;
+        _drawArrow(canvas, from, to, cand, _activeColor);
+        continue;
+      }
       _drawArrow(canvas, from, to, paint, CpmPalette.textMuted);
     }
   }
@@ -280,6 +289,8 @@ class CpmGraphPainter extends CustomPainter {
       final center = entry.value;
       final isCritical = step.criticalNodeIds.contains(id);
       final isActive = step.activeNodeIds.contains(id);
+      final es = step.earliestTimes[id];
+      final ls = step.latestTimes[id];
 
       Color fill = CpmPalette.nodeFill;
       Color border = CpmPalette.nodeBorder;
@@ -308,22 +319,117 @@ class CpmGraphPainter extends CustomPainter {
           ..style = PaintingStyle.stroke,
       );
 
-      // Línea vertical divisoria clásica del diagrama de eventos CPM.
+      // Línea horizontal: arriba va ES (ida), abajo va LS (vuelta).
       canvas.drawLine(
-        center + const Offset(0, -nodeRadius + 3),
-        center + const Offset(0, nodeRadius - 3),
+        center + const Offset(-nodeRadius + 3, 0),
+        center + const Offset(nodeRadius - 3, 0),
         Paint()
-          ..color = border.withOpacity(0.5)
+          ..color = border.withOpacity(0.6)
           ..strokeWidth = 1,
       );
 
       _drawLabel(
         canvas,
-        center + const Offset(-8, 0),
-        labels[id] ?? id,
-        Colors.white,
+        center + const Offset(0, -nodeRadius / 2),
+        es == null ? '·' : _fmt(es),
+        es == null ? CpmPalette.textMuted : CpmPalette.neonCyan,
+        fontSize: 15,
       );
+      _drawLabel(
+        canvas,
+        center + const Offset(0, nodeRadius / 2),
+        ls == null ? '·' : _fmt(ls),
+        ls == null ? CpmPalette.textMuted : CpmPalette.neonAmber,
+        fontSize: 15,
+      );
+
+      // Nombre del evento arriba del círculo.
+      final raw = labels[id];
+      _drawLabel(
+        canvas,
+        center + const Offset(0, -nodeRadius - 12),
+        (raw == null || raw.trim().isEmpty) ? id : raw,
+        Colors.white,
+        fontSize: 14,
+      );
+
+      // Holgura del evento (LS - ES) abajo del círculo, cuando ya se conoce.
+      if (es != null && ls != null) {
+        final h = ls - es;
+        _drawLabel(
+          canvas,
+          center + const Offset(0, nodeRadius + 12),
+          'H=${_fmt(h)}',
+          h.abs() < 1e-9 ? CpmPalette.neonGreen : Colors.white54,
+          fontSize: 11,
+        );
+      }
     }
+  }
+
+  // ---------------------------------------------------------------------
+  // Duración de cada actividad (y su holgura cuando ya se calculó)
+  // ---------------------------------------------------------------------
+  void _drawEdgeLabels(Canvas canvas) {
+    for (final e in edges) {
+      final from = positions[e.sourceId];
+      final to = positions[e.targetId];
+      if (from == null || to == null) continue;
+      final mid = Offset.lerp(from, to, 0.5)!;
+      final isCritical = step.criticalEdgeIds.contains(e.id);
+      final isActive =
+          e.id == step.activeEdgeId || step.candidateEdgeIds.contains(e.id);
+      final color = isCritical
+          ? CpmPalette.neonGreen
+          : (isActive ? _activeColor : Colors.white70);
+      _drawPill(canvas, mid, 'd=${_fmt(e.weight)}', color);
+
+      final slack = step.slacks[e.id];
+      if (slack != null) {
+        final zero = slack.abs() < 1e-9;
+        _drawPill(
+          canvas,
+          mid + const Offset(0, 19),
+          'H=${_fmt(slack)}',
+          zero ? CpmPalette.neonGreen : Colors.white54,
+        );
+      }
+    }
+  }
+
+  void _drawPill(Canvas canvas, Offset center, String text, Color color) {
+    final tp = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    final rect = Rect.fromCenter(
+      center: center,
+      width: tp.width + 12,
+      height: tp.height + 6,
+    );
+    final rr = RRect.fromRectAndRadius(rect, const Radius.circular(8));
+    canvas.drawRRect(rr, Paint()..color = CpmPalette.background);
+    canvas.drawRRect(
+      rr,
+      Paint()
+        ..color = color.withOpacity(0.8)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.2,
+    );
+    tp.paint(canvas, center - Offset(tp.width / 2, tp.height / 2));
+  }
+
+  String _fmt(double v) {
+    if (v == double.infinity) return '∞';
+    if (v == v.roundToDouble()) return v.toInt().toString();
+    return v.toStringAsFixed(1);
   }
 
   void _drawLabel(
