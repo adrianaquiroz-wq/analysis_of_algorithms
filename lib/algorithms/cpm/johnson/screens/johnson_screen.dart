@@ -1,11 +1,9 @@
-import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
 import '../../../../models/node_model.dart';
 import '../../../../models/edge_model.dart';
-import '../models/johnson_step.dart';
 import 'logic/johnson_algorithm.dart';
 import '../widgets/johnson_graph_painter.dart';
 
@@ -27,18 +25,24 @@ class JohnsonScreen extends StatefulWidget {
 
 class _JohnsonScreenState extends State<JohnsonScreen> {
   static const double _padding = 90;
-  static const double _topPadding = 150;
-  static const double _virtualNodeY = 60;
+  static const double _topPadding = 90;
+  static const Color _bg = Color(0xFF0F172A);
+  static const Color _card = Color(0xFF1E293B);
 
+  JohnsonMode _mode = JohnsonMode.max;
+  String? _originId;
+  String? _destId;
   JohnsonResult? _result;
-  int _stepIndex = 0;
-  Timer? _timer;
-  bool _playing = false;
+  bool _showRoute = true;
   String? _error;
 
   Map<String, Offset> _positions = {};
   Map<String, String> _labels = {};
   Size _canvasSize = const Size(400, 300);
+
+  Color get _accent => _mode == JohnsonMode.max
+      ? JohnsonPalette.neonRed
+      : JohnsonPalette.neonGreen;
 
   @override
   void initState() {
@@ -49,14 +53,22 @@ class _JohnsonScreenState extends State<JohnsonScreen> {
           'Johnson. Volvé al editor y completá tu grafo.';
       return;
     }
-    _result = JohnsonAlgorithm.solve(nodes: widget.nodes, edges: widget.edges);
+    _setDefaults();
     _computeLayout();
   }
 
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
+  void _setDefaults() {
+    final ids = widget.nodes.map((n) => n.id).toList();
+    final hasIn = {for (final e in widget.edges) e.targetId};
+    final hasOut = {for (final e in widget.edges) e.sourceId};
+    final origin = ids.firstWhere((id) => !hasIn.contains(id),
+        orElse: () => ids.first);
+    final dest = ids.lastWhere(
+      (id) => !hasOut.contains(id) && id != origin,
+      orElse: () => ids.firstWhere((id) => id != origin),
+    );
+    _originId = origin;
+    _destId = dest;
   }
 
   void _computeLayout() {
@@ -70,99 +82,58 @@ class _JohnsonScreenState extends State<JohnsonScreen> {
     }
     final origin = Offset(minX - _padding, minY - _topPadding);
 
-    final positions = <String, Offset>{
-      for (final n in widget.nodes) n.id: n.position - origin,
-    };
-    final cx =
-        positions.values.map((p) => p.dx).reduce((a, b) => a + b) /
-        positions.length;
-    positions[kJohnsonVirtualNodeId] = Offset(cx, _virtualNodeY);
+    _positions = {for (final n in widget.nodes) n.id: n.position - origin};
+    _labels = {for (final n in widget.nodes) n.id: n.label};
+    _canvasSize = Size(
+      math.max(maxX - minX + _padding * 2, 300),
+      math.max(maxY - minY + _topPadding + _padding, 240),
+    );
+  }
 
+  String _nm(String id) {
+    final l = _labels[id];
+    return (l == null || l.trim().isEmpty) ? id : l;
+  }
+
+  void _calculate() {
+    if (_originId == null || _destId == null) return;
+    final res = JohnsonAlgorithm.solve(
+      nodes: widget.nodes,
+      edges: widget.edges,
+      originId: _originId!,
+      destId: _destId!,
+      mode: _mode,
+    );
     setState(() {
-      _positions = positions;
-      _labels = {for (final n in widget.nodes) n.id: n.label};
-      _canvasSize = Size(
-        maxX - minX + _padding * 2,
-        maxY - minY + _topPadding + _padding,
-      );
+      _result = res;
+      _showRoute = true;
     });
   }
 
-  JohnsonStep get _currentStep => _result!.steps[_stepIndex];
-  bool get _isFirst => _stepIndex == 0;
-  bool get _isLast => _stepIndex == _result!.steps.length - 1;
-
-  void _goTo(int index) {
+  void _reset() {
     setState(() {
-      _stepIndex = index.clamp(0, _result!.steps.length - 1);
+      _result = null;
+      _showRoute = true;
+      _mode = JohnsonMode.max;
+      _setDefaults();
     });
-    if (_isLast) _stopPlaying();
-  }
-
-  void _next() => _goTo(_stepIndex + 1);
-  void _prev() => _goTo(_stepIndex - 1);
-
-  void _togglePlay() {
-    if (_playing) {
-      _stopPlaying();
-      return;
-    }
-    if (_isLast) _goTo(0);
-    setState(() => _playing = true);
-    _timer = Timer.periodic(const Duration(milliseconds: 1300), (_) {
-      if (_isLast) {
-        _stopPlaying();
-        return;
-      }
-      _next();
-    });
-  }
-
-  void _stopPlaying() {
-    _timer?.cancel();
-    _timer = null;
-    if (mounted) setState(() => _playing = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    final bg = const Color(0xFF0F172A);
-
     return Scaffold(
-      backgroundColor: bg,
+      backgroundColor: _bg,
       appBar: AppBar(
-        backgroundColor: bg,
+        backgroundColor: _bg,
         foregroundColor: Colors.white,
         title: const Text('Algoritmo de Johnson'),
-        actions: _error != null || _result == null
-            ? null
-            : [
-                IconButton(
-                  tooltip: 'Ver todos los pasos',
-                  icon: const Icon(Icons.list_alt),
-                  onPressed: _showStepsList,
-                ),
-                IconButton(
-                  tooltip: 'Ir al resultado final',
-                  icon: const Icon(Icons.table_chart),
-                  onPressed: _result!.hasNegativeCycle
-                      ? null
-                      : () {
-                          _stopPlaying();
-                          _goTo(_result!.steps.length - 1);
-                        },
-                ),
-              ],
       ),
       body: _error != null
           ? _buildError(_error!)
           : Column(
               children: [
-                Expanded(child: _buildCanvasArea()),
-                _buildLegend(),
-                _buildStepPanel(),
-                _buildControls(),
-                if (_currentStep.phase == JohnsonPhase.done) _buildMatrix(),
+                Expanded(flex: 5, child: _buildCanvasArea()),
+                Expanded(flex: 6, child: _buildPanel()),
               ],
             ),
     );
@@ -190,372 +161,351 @@ class _JohnsonScreenState extends State<JohnsonScreen> {
 
   Widget _buildCanvasArea() {
     return InteractiveViewer(
-      minScale: 0.4,
-      maxScale: 2.5,
-      boundaryMargin: const EdgeInsets.all(200),
-      child: SizedBox(
-        width: _canvasSize.width,
-        height: _canvasSize.height,
-        child: Stack(
-          children: [
-            JohnsonAnimatedCanvas(
-              canvasSize: _canvasSize,
-              positions: _positions,
-              labels: _labels,
-              edges: widget.edges,
-              step: _currentStep,
+      minScale: 0.5,
+      maxScale: 4,
+      scaleFactor: 600,
+      boundaryMargin: const EdgeInsets.all(120),
+      child: Center(
+        child: FittedBox(
+          fit: BoxFit.contain,
+          child: SizedBox(
+            width: _canvasSize.width,
+            height: _canvasSize.height,
+            child: CustomPaint(
+              size: _canvasSize,
+              painter: JohnsonGraphPainter(
+                positions: _positions,
+                labels: _labels,
+                edges: widget.edges,
+                result: _result,
+                showRoute: _showRoute,
+                accent: _accent,
+                originId: _originId,
+                destId: _destId,
+              ),
             ),
-            ..._buildBadges(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------
+  // Panel inferior: selección + resultado
+  // ---------------------------------------------------------------------
+  Widget _buildPanel() {
+    final res = _result;
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        color: Color(0xFF111C33),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Selecciona origen y destino',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _modeToggle(),
+            const SizedBox(height: 12),
+            _dropdown('Nodo de inicio', _originId, (v) {
+              setState(() {
+                _originId = v;
+                _result = null;
+              });
+            }),
+            const SizedBox(height: 10),
+            _dropdown('Nodo de destino', _destId, (v) {
+              setState(() {
+                _destId = v;
+                _result = null;
+              });
+            }),
+            const SizedBox(height: 14),
+            SizedBox(
+              height: 48,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1E88E5),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: _calculate,
+                child: const Text(
+                  'Calcular ruta',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+              ),
+            ),
+            if (res != null) ...[
+              const SizedBox(height: 16),
+              res.ok ? _buildResultCard(res) : _buildFailureCard(res),
+              const SizedBox(height: 12),
+              _buildActions(res),
+            ],
           ],
         ),
       ),
     );
   }
 
-  List<Widget> _buildBadges() {
-    final widgets = <Widget>[];
-    final step = _currentStep;
-
-    for (final entry in _positions.entries) {
-      if (entry.key == kJohnsonVirtualNodeId) continue;
-      final pos = entry.value;
-
-      final h = step.potentials[entry.key];
-      if (h != null) {
-        widgets.add(
-          Positioned(
-            left: pos.dx - 24,
-            top: pos.dy - 50,
-            width: 48,
-            child: Center(
-              child: JohnsonValueBadge(
-                value: h,
-                color: JohnsonPalette.neonAmber,
-                prefix: 'h=',
+  Widget _modeToggle() {
+    Widget btn(JohnsonMode m, String text, IconData icon, Color color) {
+      final sel = _mode == m;
+      return Expanded(
+        child: GestureDetector(
+          onTap: () => setState(() {
+            _mode = m;
+            _result = null;
+          }),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: sel ? color.withValues(alpha: 0.18) : _card,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: sel ? color : Colors.white12,
+                width: sel ? 1.6 : 1,
               ),
             ),
-          ),
-        );
-      }
-
-      final d = step.distances[entry.key];
-      if (d != null) {
-        final isSettled = step.settledNodeIds.contains(entry.key);
-        widgets.add(
-          Positioned(
-            left: pos.dx - 24,
-            top: pos.dy + 32,
-            width: 48,
-            child: Center(
-              child: JohnsonValueBadge(
-                value: d,
-                color: isSettled
-                    ? JohnsonPalette.neonGreen
-                    : JohnsonPalette.neonCyan,
-                prefix: 'd=',
-              ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 18, color: sel ? color : Colors.white54),
+                const SizedBox(width: 6),
+                Text(
+                  text,
+                  style: TextStyle(
+                    color: sel ? color : Colors.white54,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
           ),
-        );
-      }
-    }
-    return widgets;
-  }
-
-  Widget _buildLegend() {
-    Widget dot(Color color, String label) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 9,
-            height: 9,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
-          const SizedBox(width: 5),
-          Text(
-            label,
-            style: const TextStyle(color: Colors.white60, fontSize: 11),
-          ),
-        ],
+        ),
       );
     }
 
+    return Row(
+      children: [
+        btn(JohnsonMode.max, 'Máximo', Icons.trending_up,
+            JohnsonPalette.neonRed),
+        const SizedBox(width: 10),
+        btn(JohnsonMode.min, 'Mínimo', Icons.trending_down,
+            JohnsonPalette.neonGreen),
+      ],
+    );
+  }
+
+  Widget _dropdown(String label, String? value, ValueChanged<String?> onChanged) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white70,
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: _card,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.white12),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: value,
+              isExpanded: true,
+              dropdownColor: _card,
+              iconEnabledColor: Colors.white54,
+              style: const TextStyle(color: Colors.white, fontSize: 15),
+              items: [
+                for (final n in widget.nodes)
+                  DropdownMenuItem(value: n.id, child: Text(_nm(n.id))),
+              ],
+              onChanged: onChanged,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _sectionLabel(String text) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-      child: Wrap(
-        spacing: 14,
-        runSpacing: 4,
-        children: [
-          dot(JohnsonPalette.neonAmber, 'q y repesaje'),
-          dot(JohnsonPalette.neonCyan, 'explorando (Dijkstra)'),
-          dot(JohnsonPalette.neonGreen, 'nodo sellado / resultado'),
-          dot(JohnsonPalette.neonRed, 'ciclo negativo'),
-        ],
+      padding: const EdgeInsets.only(top: 12, bottom: 4),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Colors.white54,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
 
-  void _showStepsList() {
-    _stopPlaying();
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF0F172A),
-      isScrollControlled: true,
-      builder: (ctx) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.7,
-          minChildSize: 0.4,
-          maxChildSize: 0.9,
-          expand: false,
-          builder: (context, scrollController) {
-            return Column(
-              children: [
-                const Padding(
-                  padding: EdgeInsets.all(14),
-                  child: Text(
-                    'Todos los pasos',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: ListView.builder(
-                    controller: scrollController,
-                    itemCount: _result!.steps.length,
-                    itemBuilder: (context, index) {
-                      final step = _result!.steps[index];
-                      final color = _phaseColor(step.phase);
-                      final isCurrent = index == _stepIndex;
-                      return ListTile(
-                        selected: isCurrent,
-                        selectedTileColor: color.withOpacity(0.12),
-                        leading: Container(
-                          width: 10,
-                          height: 10,
-                          margin: const EdgeInsets.only(top: 4),
-                          decoration: BoxDecoration(
-                            color: color,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        title: Text(
-                          '${index + 1}. ${step.title}',
-                          style: TextStyle(
-                            color: isCurrent ? color : Colors.white,
-                            fontWeight: isCurrent
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                            fontSize: 13,
-                          ),
-                        ),
-                        subtitle: Text(
-                          step.description,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white54,
-                            fontSize: 12,
-                          ),
-                        ),
-                        onTap: () {
-                          _goTo(index);
-                          Navigator.pop(ctx);
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildStepPanel() {
-    final step = _currentStep;
-    final color = _phaseColor(step.phase);
-
+  Widget _buildResultCard(JohnsonResult res) {
+    final accent = _accent;
+    final isMax = res.mode == JohnsonMode.max;
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: accent.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border(left: BorderSide(color: color, width: 4)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  step.title,
-                  style: TextStyle(
-                    color: color,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  step.description,
-                  style: const TextStyle(color: Colors.white70, fontSize: 13),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            '${_stepIndex + 1}/${_result!.steps.length}',
-            style: const TextStyle(color: Colors.white38, fontSize: 12),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Color _phaseColor(JohnsonPhase phase) {
-    switch (phase) {
-      case JohnsonPhase.negativeCycle:
-        return JohnsonPalette.neonRed;
-      case JohnsonPhase.setup:
-      case JohnsonPhase.reweight:
-        return JohnsonPalette.neonAmber;
-      case JohnsonPhase.bellmanFord:
-      case JohnsonPhase.dijkstra:
-        return JohnsonPalette.neonCyan;
-      case JohnsonPhase.removeVirtualNode:
-      case JohnsonPhase.done:
-        return JohnsonPalette.neonGreen;
-    }
-  }
-
-  Widget _buildControls() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: _isFirst ? null : _prev,
-            icon: const Icon(Icons.skip_previous),
-            color: Colors.white,
-          ),
-          IconButton(
-            onPressed: _togglePlay,
-            icon: Icon(_playing ? Icons.pause_circle : Icons.play_circle),
-            color: JohnsonPalette.neonCyan,
-            iconSize: 34,
-          ),
-          IconButton(
-            onPressed: _isLast ? null : _next,
-            icon: const Icon(Icons.skip_next),
-            color: Colors.white,
-          ),
-          Expanded(
-            child: Slider(
-              value: _stepIndex.toDouble(),
-              min: 0,
-              max: (_result!.steps.length - 1).toDouble(),
-              activeColor: JohnsonPalette.neonCyan,
-              inactiveColor: Colors.white24,
-              onChanged: (v) {
-                _stopPlaying();
-                _goTo(v.round());
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMatrix() {
-    final ids = widget.nodes.map((n) => n.id).toList();
-    final distances = _result!.distances;
-
-    String fmt(double v) {
-      if (v == double.infinity) return '∞';
-      return v == v.roundToDouble()
-          ? v.toInt().toString()
-          : v.toStringAsFixed(1);
-    }
-
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
-        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: accent.withValues(alpha: 0.7), width: 1.4),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Matriz de distancias más cortas',
-            style: TextStyle(
-              color: JohnsonPalette.neonGreen,
-              fontWeight: FontWeight.bold,
+          Center(
+            child: Text(
+              isMax ? 'Camino máximo' : 'Camino mínimo',
+              style: TextStyle(
+                color: accent,
+                fontWeight: FontWeight.bold,
+                fontSize: 17,
+              ),
             ),
           ),
-          const SizedBox(height: 10),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DataTable(
-              headingRowColor: WidgetStateProperty.all(const Color(0xFF0F172A)),
-              columns: [
-                const DataColumn(
-                  label: Text(
-                    'u \\ v',
-                    style: TextStyle(color: Colors.white38),
-                  ),
-                ),
-                for (final id in ids)
-                  DataColumn(
-                    label: Text(
-                      _labels[id] ?? id,
-                      style: const TextStyle(color: Colors.white),
+          _sectionLabel('Ruta encontrada'),
+          Text(
+            res.routeNodeIds.map(_nm).join(' → '),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+          _sectionLabel('Peso total'),
+          Text(
+            JohnsonAlgorithm.fmt(res.total),
+            style: TextStyle(
+              color: accent,
+              fontWeight: FontWeight.bold,
+              fontSize: 28,
+            ),
+          ),
+          _sectionLabel('Desglose'),
+          Text(
+            res.breakdown,
+            style: const TextStyle(color: Colors.white, fontSize: 14),
+          ),
+          _sectionLabel('¿Por qué este camino?'),
+          for (final r in res.reasons)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('• ', style: TextStyle(color: accent, fontSize: 13)),
+                  Expanded(
+                    child: Text(
+                      r,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                        height: 1.3,
+                      ),
                     ),
                   ),
-              ],
-              rows: [
-                for (final u in ids)
-                  DataRow(
-                    cells: [
-                      DataCell(
-                        Text(
-                          _labels[u] ?? u,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      for (final v in ids)
-                        DataCell(
-                          Text(
-                            fmt(distances[u]?[v] ?? double.infinity),
-                            style: TextStyle(
-                              color: u == v
-                                  ? Colors.white24
-                                  : JohnsonPalette.neonGreen,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-              ],
+                ],
+              ),
+            ),
+          const SizedBox(height: 4),
+          const Text(
+            'En el grafo: cada nodo muestra temprano | tardío, y cada arista '
+            'peso (holgura). Holgura 0 = la arista está en el camino.',
+            style: TextStyle(color: Colors.white38, fontSize: 11.5),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFailureCard(JohnsonResult res) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: JohnsonPalette.neonAmber.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: JohnsonPalette.neonAmber.withValues(alpha: 0.7),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.warning_amber_rounded,
+              color: JohnsonPalette.neonAmber),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              res.error ?? 'No se pudo calcular la ruta.',
+              style: const TextStyle(color: Colors.white, fontSize: 14),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildActions(JohnsonResult res) {
+    return Row(
+      children: [
+        if (res.ok)
+          Expanded(
+            child: OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.white70,
+                side: const BorderSide(color: Colors.white24),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onPressed: () => setState(() => _showRoute = !_showRoute),
+              child: Text(_showRoute ? 'Ocultar ruta' : 'Mostrar ruta'),
+            ),
+          ),
+        if (res.ok) const SizedBox(width: 10),
+        Expanded(
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF334155),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onPressed: _reset,
+            child: const Text(
+              'Nueva configuración',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

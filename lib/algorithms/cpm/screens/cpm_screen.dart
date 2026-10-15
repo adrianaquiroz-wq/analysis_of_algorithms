@@ -8,6 +8,7 @@ import '../../../models/edge_model.dart';
 import '../models/cpm_step.dart';
 import '../logic/cpm_algorithm.dart';
 import '../widgets/cpm_graph_painter.dart';
+import '../johnson/screens/johnson_screen.dart';
 
 class CpmScreen extends StatefulWidget {
   final List<NodeModel> nodes;
@@ -159,6 +160,23 @@ class _CpmScreenState extends State<CpmScreen> {
             ? null
             : [
                 IconButton(
+                  tooltip: 'Máximo / Mínimo (Johnson)',
+                  icon: const Icon(Icons.alt_route_rounded),
+                  onPressed: () {
+                    _stopPlaying();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => JohnsonScreen(
+                          nodes: widget.nodes,
+                          edges: widget.edges,
+                          isDarkMode: true,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                IconButton(
                   tooltip: _currentPage == 0
                       ? 'Ver Tabla de Actividades'
                       : 'Ver Grafo Animado',
@@ -191,6 +209,9 @@ class _CpmScreenState extends State<CpmScreen> {
           ? _buildError(_error!)
           : PageView(
               controller: _pageController,
+              // Sin deslizar con el dedo: así el zoom/arrastre del grafo no
+              // se va a la tabla. Se cambia con el icono de arriba.
+              physics: const NeverScrollableScrollPhysics(),
               onPageChanged: (index) => setState(() => _currentPage = index),
               children: [
                 // PÁGINA 1: Grafo / Red Animada Paso a Paso
@@ -647,22 +668,29 @@ class _CpmScreenState extends State<CpmScreen> {
 
   Widget _buildCanvasArea() {
     return InteractiveViewer(
-      minScale: 0.4,
-      maxScale: 2.5,
-      boundaryMargin: const EdgeInsets.all(200),
-      child: SizedBox(
-        width: _canvasSize.width,
-        height: _canvasSize.height,
-        child: Stack(
-          children: [
-            CpmAnimatedCanvas(
-              canvasSize: _canvasSize,
-              positions: _positions,
-              labels: _labels,
-              edges: widget.edges,
-              step: _currentStep,
+      minScale: 0.5,
+      maxScale: 4,
+      scaleFactor: 600, // zoom menos sensible (por defecto 200)
+      boundaryMargin: const EdgeInsets.all(120),
+      child: Center(
+        // FittedBox: el grafo completo se ajusta a la pantalla del celular
+        child: FittedBox(
+          fit: BoxFit.contain,
+          child: SizedBox(
+            width: _canvasSize.width,
+            height: _canvasSize.height,
+            child: Stack(
+              children: [
+                CpmAnimatedCanvas(
+                  canvasSize: _canvasSize,
+                  positions: _positions,
+                  labels: _labels,
+                  edges: widget.edges,
+                  step: _currentStep,
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

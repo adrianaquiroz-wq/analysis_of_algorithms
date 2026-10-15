@@ -5,7 +5,7 @@ import 'cpm_flow.dart';
 
 final AlgorithmInfo cpmInfo = AlgorithmInfo(
   id: 'cpm',
-  title: 'CPM (critical path)',
+  title: 'JOHNSON',
   subtitle: 'Planificación de proyectos con un solo tipo de nodo',
   icon: Icons.memory_rounded,
   isBipartite: false,
