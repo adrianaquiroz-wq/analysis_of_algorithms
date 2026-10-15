@@ -159,6 +159,7 @@ class _NorthwestScreenState extends State<NorthwestScreen> {
                 costs: _costs,
                 supplyControllers: _supplyControllers,
                 demandControllers: _demandControllers,
+                result: _nwResult,
               ),
             const SizedBox(height: 16),
             SizedBox(
