@@ -52,11 +52,37 @@ class _NorthwestScreenState extends State<NorthwestScreen> {
         )
         .toList();
 
+    // Cada vez que se edita una oferta/demanda, se guarda en el nodo
+    // (attribute1 = oferta del origen, attribute2 = demanda del destino).
+    // Así, al guardar el grafo, esos valores quedan registrados.
+    for (var i = 0; i < _supplyControllers.length; i++) {
+      final node = _groups.groupA[i];
+      final controller = _supplyControllers[i];
+      controller.addListener(
+        () => _syncToNode(controller.text, (v) => node.attribute1 = v),
+      );
+    }
+    for (var j = 0; j < _demandControllers.length; j++) {
+      final node = _groups.groupB[j];
+      final controller = _demandControllers[j];
+      controller.addListener(
+        () => _syncToNode(controller.text, (v) => node.attribute2 = v),
+      );
+    }
+
     if (_groups.isComplete) {
       _calculate();
     } else {
       _error = 'Para resolver el problema, primero debes asignar nodos al Conjunto A (Orígenes) y al Conjunto B (Destinos) en el editor del grafo.';
     }
+  }
+
+  /// Escribe el texto en el nodo solo si es un número válido (>= 0).
+  /// Si no lo es, el nodo conserva su último valor bueno.
+  void _syncToNode(String raw, void Function(String) write) {
+    final text = raw.trim();
+    final parsed = double.tryParse(text.replaceAll(',', '.'));
+    if (parsed != null && parsed >= 0) write(text);
   }
 
   String _numericOrDefault(String value) {
