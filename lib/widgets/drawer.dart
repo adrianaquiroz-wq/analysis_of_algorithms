@@ -1,34 +1,68 @@
 import 'package:flutter/material.dart';
 
+/// Menú de hamburguesa de la app. Las opciones propias de los grafos
+/// (nuevo lienzo, guardar, grafos guardados) son opcionales: si no se
+/// pasan, no se muestran (por ejemplo en las pantallas de ordenamiento).
 class GraphDrawer extends StatelessWidget {
   final bool isDarkMode;
   final ValueChanged<bool> onThemeChanged;
-  final VoidCallback onOpenAdjacencyMatrix;
-  final VoidCallback onNewCanvas;
-  final VoidCallback onSaveGraph;
-  final VoidCallback onOpenSavedGraphs;
+  final VoidCallback? onOpenAdjacencyMatrix;
+  final VoidCallback? onNewCanvas;
+  final VoidCallback? onSaveGraph;
+  final VoidCallback? onOpenSavedGraphs;
   final VoidCallback onOpenHelp;
   final VoidCallback onBackHome;
   final String algorithmTitle;
+  final IconData headerIcon;
+  final String newLabel;
+  final String saveLabel;
+  final String savedLabel;
 
   const GraphDrawer({
     super.key,
     required this.isDarkMode,
     required this.onThemeChanged,
-    required this.onOpenAdjacencyMatrix,
-    required this.onNewCanvas,
-    required this.onSaveGraph,
-    required this.onOpenSavedGraphs,
     required this.onOpenHelp,
     required this.onBackHome,
+    this.onOpenAdjacencyMatrix,
+    this.onNewCanvas,
+    this.onSaveGraph,
+    this.onOpenSavedGraphs,
     this.algorithmTitle = 'Lienzo General',
+    this.headerIcon = Icons.hub_rounded,
+    this.newLabel = 'Nuevo Lienzo',
+    this.saveLabel = 'Guardar Grafo',
+    this.savedLabel = 'Grafos Guardados',
   });
+
+  Widget _tile(
+    BuildContext context, {
+    required IconData icon,
+    required Color iconColor,
+    required Color textColor,
+    required String label,
+    required VoidCallback action,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: iconColor),
+      title: Text(
+        label,
+        style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
+      ),
+      onTap: () {
+        Navigator.pop(context);
+        action();
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final drawerBg = isDarkMode ? const Color(0xFF0F172A) : Colors.white;
     final textColor = isDarkMode ? Colors.white : Colors.black87;
     final activeColor = isDarkMode ? Colors.cyanAccent : Colors.blueAccent;
+    final hasGraphActions =
+        onNewCanvas != null || onSaveGraph != null || onOpenSavedGraphs != null;
 
     return Drawer(
       backgroundColor: drawerBg,
@@ -43,7 +77,7 @@ class GraphDrawer extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Icon(Icons.hub_rounded, color: activeColor, size: 32),
+                Icon(headerIcon, color: activeColor, size: 32),
                 const SizedBox(height: 8),
                 Text(
                   'ST-GR / Menú',
@@ -54,7 +88,7 @@ class GraphDrawer extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                // 2. Aquí mostramos dinámicamente el nombre del método seleccionado
+                // Nombre del método seleccionado
                 Text(
                   algorithmTitle,
                   style: TextStyle(
@@ -76,64 +110,51 @@ class GraphDrawer extends StatelessWidget {
             onChanged: onThemeChanged,
           ),
           const Divider(),
-          ListTile(
-            leading: Icon(Icons.note_add_rounded, color: activeColor),
-            title: Text(
-              'Nuevo Lienzo',
-              style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
-            ),
-            onTap: () {
-              Navigator.pop(context);
-              onNewCanvas();
-            },
+          if (hasGraphActions) ...[
+            if (onNewCanvas != null)
+              _tile(
+                context,
+                icon: Icons.note_add_rounded,
+                iconColor: activeColor,
+                textColor: textColor,
+                label: newLabel,
+                action: onNewCanvas!,
+              ),
+            if (onSaveGraph != null)
+              _tile(
+                context,
+                icon: Icons.save_rounded,
+                iconColor: activeColor,
+                textColor: textColor,
+                label: saveLabel,
+                action: onSaveGraph!,
+              ),
+            if (onOpenSavedGraphs != null)
+              _tile(
+                context,
+                icon: Icons.folder_open_rounded,
+                iconColor: activeColor,
+                textColor: textColor,
+                label: savedLabel,
+                action: onOpenSavedGraphs!,
+              ),
+            const Divider(),
+          ],
+          _tile(
+            context,
+            icon: Icons.help_outline_rounded,
+            iconColor: activeColor,
+            textColor: textColor,
+            label: 'Ayuda',
+            action: onOpenHelp,
           ),
-          ListTile(
-            leading: Icon(Icons.save_rounded, color: activeColor),
-            title: Text(
-              'Guardar Grafo',
-              style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
-            ),
-            onTap: () {
-              Navigator.pop(context);
-              onSaveGraph();
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.folder_open_rounded, color: activeColor),
-            title: Text(
-              'Grafos Guardados',
-              style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
-            ),
-            onTap: () {
-              Navigator.pop(context);
-              onOpenSavedGraphs();
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: Icon(Icons.help_outline_rounded, color: activeColor),
-            title: Text(
-              'Ayuda',
-              style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
-            ),
-            onTap: () {
-              Navigator.pop(context);
-              onOpenHelp();
-            },
-          ),
-          ListTile(
-            leading: const Icon(
-              Icons.arrow_back_rounded,
-              color: Colors.orangeAccent,
-            ),
-            title: Text(
-              'Volver al Inicio',
-              style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
-            ),
-            onTap: () {
-              Navigator.pop(context);
-              onBackHome();
-            },
+          _tile(
+            context,
+            icon: Icons.arrow_back_rounded,
+            iconColor: Colors.orangeAccent,
+            textColor: textColor,
+            label: 'Volver al Inicio',
+            action: onBackHome,
           ),
         ],
       ),
