@@ -123,6 +123,59 @@ class ShellSortController extends ChangeNotifier {
     _play();
   }
 
+  /// Ejecuta un solo paso de comparación o intercambio y se detiene en pausa.
+  void stepForward() {
+    if (_state == PlayState.done) return;
+    if (_state == PlayState.idle) {
+      _resetState();
+      _result = ShellSortAlgorithm.run(_values, descending: _descending);
+      _complexity = ComplexityEstimator.estimate(
+        _values,
+        descending: _descending,
+      );
+      _state = PlayState.paused;
+    }
+    if (_result == null || _cursor >= _result!.steps.length) {
+      _state = PlayState.done;
+      _clearActive();
+      _gap = null;
+      _note = _result?.swapCount == 0
+          ? 'La lista ya estaba ordenada.'
+          : 'Lista ordenada.';
+      notifyListeners();
+      return;
+    }
+
+    final s = _result!.steps[_cursor];
+    final a = _order[s.i];
+    final b = _order[s.j];
+
+    _gap = s.gap;
+    _activeI = s.i;
+    _activeJ = s.j;
+    _movers = {a, b};
+    _hopper = s.swapped ? a : null;
+    _lifted = s.swapped;
+    _note = s.swapped
+        ? 'Desordenados: ${_values[a]} ↔ ${_values[b]}, se intercambian'
+        : 'En orden: ${_values[a]} y ${_values[b]} se respetan, no se mueven';
+
+    if (s.swapped) {
+      _order[s.i] = b;
+      _order[s.j] = a;
+    }
+
+    _cursor++;
+    if (_cursor >= _result!.steps.length) {
+      _gap = null;
+      _note = _result!.swapCount == 0
+          ? 'La lista ya estaba ordenada.'
+          : 'Lista ordenada.';
+      _state = PlayState.done;
+    }
+    notifyListeners();
+  }
+
   void reset() {
     _resetState();
     notifyListeners();

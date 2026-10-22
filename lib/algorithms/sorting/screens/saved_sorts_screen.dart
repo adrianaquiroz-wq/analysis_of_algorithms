@@ -78,7 +78,7 @@ class _SavedSortsScreenState extends State<SavedSortsScreen> {
               return ListView.separated(
                 padding: const EdgeInsets.all(12),
                 itemCount: items.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                separatorBuilder: (context, index) => const SizedBox(height: 8),
                 itemBuilder: (context, i) => _tile(items[i], p, isDark),
               );
             },
@@ -89,12 +89,14 @@ class _SavedSortsScreenState extends State<SavedSortsScreen> {
   }
 
   Widget _tile(SavedSort item, AppPalette p, bool isDark) {
-    return Container(
-      decoration: BoxDecoration(
-        color: p.card,
+    return Material(
+      color: p.card,
+      borderRadius: BorderRadius.circular(12),
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: p.cardBorder),
+        side: BorderSide(color: p.cardBorder),
       ),
+      clipBehavior: Clip.antiAlias,
       child: ListTile(
         onTap: () => Navigator.pop(context, item),
         leading: Icon(Icons.format_list_numbered_rounded, color: p.accent),

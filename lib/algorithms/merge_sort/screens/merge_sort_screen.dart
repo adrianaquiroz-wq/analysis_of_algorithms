@@ -5,7 +5,6 @@ import 'package:graph_app/algorithms/merge_sort/widgets/merge_banner.dart';
 import 'package:graph_app/algorithms/merge_sort/widgets/merge_metrics_panel.dart';
 import 'package:graph_app/algorithms/merge_sort/widgets/merge_stage.dart';
 import 'package:graph_app/algorithms/sorting/screens/sorting_help_screen.dart';
-import 'package:graph_app/algorithms/sorting/shell_sort/logic/sort_input.dart';
 import 'package:graph_app/algorithms/sorting/shell_sort/widgets/direction_toggle.dart';
 import 'package:graph_app/algorithms/sorting/shell_sort/widgets/playback_controls.dart';
 import 'package:graph_app/algorithms/sorting/shell_sort/widgets/sort_input_panel.dart';
@@ -148,6 +147,7 @@ class _MergeSortScreenState extends State<MergeSortScreen>
                 onResume: _c.resume,
                 onReset: _c.reset,
                 onSpeed: _c.setSpeed,
+                onStepNext: _c.stepForward,
               ),
               const SizedBox(height: 16),
               MergeMetricsPanel(

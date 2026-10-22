@@ -159,6 +159,7 @@ class _ShellSortScreenState extends State<ShellSortScreen>
                 onResume: _c.resume,
                 onReset: _c.reset,
                 onSpeed: _c.setSpeed,
+                onStepNext: _c.stepForward,
               ),
               const SizedBox(height: 16),
               MetricsPanel(

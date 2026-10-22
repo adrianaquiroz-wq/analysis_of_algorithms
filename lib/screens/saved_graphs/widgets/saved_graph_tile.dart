@@ -1,4 +1,3 @@
-// TODO Implement this library.
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:graph_app/models/saved_graph.dart';
@@ -22,12 +21,14 @@ class SavedGraphTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final date = DateFormat('dd/MM/yyyy HH:mm').format(meta.updatedAt);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: palette.card,
+    return Material(
+      color: palette.card,
+      borderRadius: BorderRadius.circular(10),
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: palette.cardBorder),
+        side: BorderSide(color: palette.cardBorder),
       ),
+      clipBehavior: Clip.antiAlias,
       child: ListTile(
         title: Text(
           meta.name,

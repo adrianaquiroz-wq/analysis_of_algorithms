@@ -65,56 +65,60 @@ class _SectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
+      child: Material(
         color: palette.card,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: palette.cardBorder),
-      ),
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          initiallyExpanded: initiallyExpanded,
-          iconColor: palette.accent,
-          collapsedIconColor: palette.accent,
-          leading: Icon(section.icon, color: palette.accent),
-          title: Text(
-            section.title,
-            style: TextStyle(
-              color: palette.text,
-              fontWeight: FontWeight.bold,
-              fontSize: 15,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(color: palette.cardBorder),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Theme(
+          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+          child: ExpansionTile(
+            initiallyExpanded: initiallyExpanded,
+            iconColor: palette.accent,
+            collapsedIconColor: palette.accent,
+            leading: Icon(section.icon, color: palette.accent),
+            title: Text(
+              section.title,
+              style: TextStyle(
+                color: palette.text,
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+              ),
             ),
-          ),
-          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-          expandedCrossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (final item in section.items)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2, right: 8),
-                      child: Text(
-                        '•',
-                        style: TextStyle(color: palette.accent, fontSize: 14),
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        item,
-                        style: TextStyle(
-                          color: palette.subtleText,
-                          fontSize: 14,
-                          height: 1.35,
+            childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+            expandedCrossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final item in section.items)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2, right: 8),
+                        child: Text(
+                          '•',
+                          style: TextStyle(color: palette.accent, fontSize: 14),
                         ),
                       ),
-                    ),
-                  ],
+                      Expanded(
+                        child: Text(
+                          item,
+                          style: TextStyle(
+                            color: palette.subtleText,
+                            fontSize: 14,
+                            height: 1.35,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

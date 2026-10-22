@@ -30,7 +30,6 @@ class ActiveSplit {
 
 /// Estado de la animación. Reproduce de corrido los eventos que registró
 /// [MergeSortAlgorithm]; la pantalla solo escucha y dibuja.
-///
 class MergeSortController extends ChangeNotifier {
   /// Números con los que arranca Merge Sort (cámbialos a tu gusto, 1 a 100).
   static const List<int> defaultValues = [1, 2, 5, 9, 12, 20, 25, 45];
@@ -147,6 +146,40 @@ class MergeSortController extends ChangeNotifier {
     _state = PlayState.playing;
     notifyListeners();
     _play();
+  }
+
+  /// Ejecuta un solo paso (split, compare, place, merged) y se detiene en pausa.
+  void stepForward() {
+    if (_state == PlayState.done) return;
+    if (_state == PlayState.idle) {
+      _resetState();
+      _result = MergeSortAlgorithm.run(_values, descending: _descending);
+      _state = PlayState.paused;
+      _phase = MergePhase.dividing;
+      _cursor = 0;
+    }
+    if (_result == null || _cursor >= _result!.events.length) {
+      _comparing = {};
+      _placedId = null;
+      _phase = MergePhase.done;
+      _note = _result?.events.isEmpty ?? true
+          ? 'No había nada que ordenar.'
+          : 'Lista ordenada: ${_fmt(_result!.sorted)}';
+      _state = PlayState.done;
+      notifyListeners();
+      return;
+    }
+
+    _apply(_result!.events[_cursor]);
+    _cursor++;
+    if (_cursor >= _result!.events.length) {
+      _comparing = {};
+      _placedId = null;
+      _phase = MergePhase.done;
+      _note = 'Lista ordenada: ${_fmt(_result!.sorted)}';
+      _state = PlayState.done;
+    }
+    notifyListeners();
   }
 
   void reset() {
