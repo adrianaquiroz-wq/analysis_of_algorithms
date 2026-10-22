@@ -23,7 +23,6 @@ class SavedGraphTile extends StatelessWidget {
 
     return Material(
       color: palette.card,
-      borderRadius: BorderRadius.circular(10),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
         side: BorderSide(color: palette.cardBorder),

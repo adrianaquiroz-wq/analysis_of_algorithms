@@ -1,15 +1,15 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:graph_app/algorithms/sorting/storage/saved_sort.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Guarda y carga conjuntos de números con SharedPreferences, igual que
-/// GraphStorageService hace con los grafos. Todo va en una sola clave.
 class SortStorageService {
   static const String _key = 'saved_sorts';
 
-  /// Lista los guardados (los más recientes primero). Con [sortId] solo
-  /// los de ese método.
+  /// Sube cada vez que se guarda o borra algo, para que las listas se recarguen.
+  static final ValueNotifier<int> changes = ValueNotifier<int>(0);
+
   Future<List<SavedSort>> list({String? sortId}) async {
     final all = await _readAll();
     final result = sortId == null
@@ -19,7 +19,6 @@ class SortStorageService {
     return result;
   }
 
-  /// Guarda. Si [id] es de uno existente lo sobrescribe. Devuelve el id.
   Future<String> save({
     String? id,
     required String name,
@@ -66,5 +65,6 @@ class SortStorageService {
       _key,
       jsonEncode(all.map((s) => s.toJson()).toList()),
     );
+    changes.value++;
   }
 }
