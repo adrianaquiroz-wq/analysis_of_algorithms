@@ -87,14 +87,15 @@ class _SortInputPanelState extends State<SortInputPanel> {
   }
 
   Widget _chip(String label, InputMode mode) => ChoiceChip(
-        label: Text(label, style: TextStyle(color: _p.text)),
-        selected: _mode == mode,
-        selectedColor: _p.accent.withValues(alpha: 0.25),
-        backgroundColor: _p.background,
-        onSelected: widget.enabled ? (_) => _setMode(mode) : null,
-      );
+    label: Text(label, style: TextStyle(color: _p.text)),
+    selected: _mode == mode,
+    selectedColor: _p.accent.withValues(alpha: 0.25),
+    backgroundColor: _p.background,
+    onSelected: widget.enabled ? (_) => _setMode(mode) : null,
+  );
 
-  Widget _presetChip(String label, List<int> values, IconData icon) => ActionChip(
+  Widget _presetChip(String label, List<int> values, IconData icon) =>
+      ActionChip(
         avatar: Icon(icon, size: 14, color: _p.accent),
         label: Text(label, style: TextStyle(color: _p.text, fontSize: 12)),
         backgroundColor: _p.background,
@@ -115,24 +116,20 @@ class _SortInputPanelState extends State<SortInputPanel> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Text(
+            'Datos a ordenar',
+            style: TextStyle(
+              color: _p.text,
+              fontSize: 17,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
             children: [
-              Text(
-                'Datos a ordenar',
-                style: TextStyle(
-                  color: _p.text,
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Wrap(
-                spacing: 8,
-                children: [
-                  _chip('Manual', InputMode.manual),
-                  _chip('Aleatorio', InputMode.random),
-                ],
-              ),
+              _chip('Manual', InputMode.manual),
+              _chip('Aleatorio', InputMode.random),
             ],
           ),
           const SizedBox(height: 12),
@@ -149,23 +146,38 @@ class _SortInputPanelState extends State<SortInputPanel> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                _presetChip(
-                  'Mejor caso (ordenado)',
-                  const [10, 20, 32, 45, 58, 70, 85, 96],
-                  Icons.trending_up_rounded,
-                ),
+                _presetChip('Mejor caso (ordenado)', const [
+                  10,
+                  20,
+                  32,
+                  45,
+                  58,
+                  70,
+                  85,
+                  96,
+                ], Icons.trending_up_rounded),
                 const SizedBox(width: 6),
-                _presetChip(
-                  'Peor caso (invertido)',
-                  const [96, 85, 70, 58, 45, 32, 20, 10],
-                  Icons.trending_down_rounded,
-                ),
+                _presetChip('Peor caso (invertido)', const [
+                  96,
+                  85,
+                  70,
+                  58,
+                  45,
+                  32,
+                  20,
+                  10,
+                ], Icons.trending_down_rounded),
                 const SizedBox(width: 6),
-                _presetChip(
-                  'Casi ordenado',
-                  const [10, 20, 32, 70, 58, 45, 85, 96],
-                  Icons.auto_awesome_rounded,
-                ),
+                _presetChip('Casi ordenado', const [
+                  10,
+                  20,
+                  32,
+                  70,
+                  58,
+                  45,
+                  85,
+                  96,
+                ], Icons.auto_awesome_rounded),
               ],
             ),
           ),
@@ -177,48 +189,48 @@ class _SortInputPanelState extends State<SortInputPanel> {
   }
 
   Widget _manualField() => TextField(
-        controller: _manual,
-        enabled: widget.enabled,
-        onChanged: (_) => _applyManual(),
-        style: TextStyle(color: _p.text),
-        decoration: InputDecoration(
-          hintText: 'Ej: 34, 7, 85, 12, 60',
-          hintStyle: TextStyle(color: _p.mutedText),
-          helperText:
-              'De ${SortInput.minCount} a ${SortInput.maxCount} números, entre ${SortInput.minValue} y ${SortInput.maxValue}.',
-          helperStyle: TextStyle(color: _p.mutedText),
-          errorText: _error,
-          isDense: true,
-        ),
-      );
+    controller: _manual,
+    enabled: widget.enabled,
+    onChanged: (_) => _applyManual(),
+    style: TextStyle(color: _p.text),
+    decoration: InputDecoration(
+      hintText: 'Ej: 34, 7, 85, 12, 60',
+      hintStyle: TextStyle(color: _p.mutedText),
+      helperText:
+          'De ${SortInput.minCount} a ${SortInput.maxCount} números, entre ${SortInput.minValue} y ${SortInput.maxValue}.',
+      helperStyle: TextStyle(color: _p.mutedText),
+      errorText: _error,
+      isDense: true,
+    ),
+  );
 
   Widget _randomField() => Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _count,
-              enabled: widget.enabled,
-              keyboardType: TextInputType.number,
-              style: TextStyle(color: _p.text),
-              decoration: InputDecoration(
-                labelText: '¿Cuántos números?',
-                helperText: 'Máximo ${SortInput.maxCount}',
-                helperStyle: TextStyle(color: _p.mutedText),
-                errorText: _error,
-                isDense: true,
-              ),
-            ),
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Expanded(
+        child: TextField(
+          controller: _count,
+          enabled: widget.enabled,
+          keyboardType: TextInputType.number,
+          style: TextStyle(color: _p.text),
+          decoration: InputDecoration(
+            labelText: '¿Cuántos números?',
+            helperText: 'Máximo ${SortInput.maxCount}',
+            helperStyle: TextStyle(color: _p.mutedText),
+            errorText: _error,
+            isDense: true,
           ),
-          const SizedBox(width: 12),
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: ElevatedButton.icon(
-              onPressed: widget.enabled ? _generate : null,
-              icon: const Icon(Icons.casino_rounded),
-              label: const Text('Generar'),
-            ),
-          ),
-        ],
-      );
+        ),
+      ),
+      const SizedBox(width: 12),
+      Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: ElevatedButton.icon(
+          onPressed: widget.enabled ? _generate : null,
+          icon: const Icon(Icons.casino_rounded),
+          label: const Text('Generar'),
+        ),
+      ),
+    ],
+  );
 }

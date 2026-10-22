@@ -40,7 +40,7 @@ class SortingTheoryScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           _section(p, 'Cómo funciona', _steps(p)),
-          const SizedBox(height: 24),
+          const SizedBox(height: 15),
           ElevatedButton.icon(
             onPressed: () => Navigator.push(
               context,
@@ -49,6 +49,7 @@ class SortingTheoryScreen extends StatelessWidget {
             icon: const Icon(Icons.play_circle_outline_rounded),
             label: const Text('Abrir visualización'),
           ),
+          const SizedBox(height: 30),
         ],
       ),
     );

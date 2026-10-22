@@ -70,13 +70,13 @@ class HomeContent extends StatelessWidget {
             accentColor: palette.accent,
           ),
           const SizedBox(height: 30),
-          Center(child: _FreeCanvasButton(accent: palette.accent)),
+          //Center(child: _FreeCanvasButton(accent: palette.accent)),
         ],
       ),
     );
   }
 }
-
+/*
 class _FreeCanvasButton extends StatelessWidget {
   final Color accent;
 
@@ -106,4 +106,4 @@ class _FreeCanvasButton extends StatelessWidget {
       ),
     );
   }
-}
+}*/
