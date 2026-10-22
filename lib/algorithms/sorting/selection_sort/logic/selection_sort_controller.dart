@@ -5,6 +5,7 @@ enum SelectionPlayState { idle, playing, paused, done }
 
 class SelectionSortController extends ChangeNotifier {
   List<num> values;
+  List<num> _initialValues;
   bool descending = false;
   double speed = 1;
   SelectionPlayState state = SelectionPlayState.idle;
@@ -16,12 +17,15 @@ class SelectionSortController extends ChangeNotifier {
   String? note;
   int _runId = 0;
 
-  SelectionSortController(List<num> initialValues) : values = List.of(initialValues);
+  SelectionSortController(List<num> initialValues)
+      : values = List.of(initialValues),
+        _initialValues = List.of(initialValues);
 
   bool get isPlaying => state == SelectionPlayState.playing;
   Duration get stepDuration => Duration(milliseconds: (260 / speed).round());
 
   void setValues(List<num> next) {
+    _initialValues = List.of(next);
     values = List.of(next);
     reset();
   }
@@ -77,6 +81,7 @@ class SelectionSortController extends ChangeNotifier {
 
   void reset({bool notify = true}) {
     _runId++;
+    values = List.of(_initialValues);
     cursor = 0;
     result = null;
     selectedIndex = null;
