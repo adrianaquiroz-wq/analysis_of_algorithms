@@ -17,6 +17,7 @@ import 'package:graph_app/widgets/graph_app_bar.dart';
 import 'package:graph_app/widgets/graph_canvas.dart';
 import 'package:graph_app/widgets/right_toolbar.dart';
 import 'package:graph_app/widgets/selection_actions_bar.dart';
+import 'package:graph_app/algorithms/sorting/selection_sort/screens/selection_sort_screen.dart';
 
 import 'graph_persistence_mixin.dart';
 import 'widgets/algorithm_action_button.dart';
@@ -151,12 +152,38 @@ class _GraphScreenState extends State<GraphScreen>
       onNewCanvas: startNewCanvas,
       onSaveGraph: saveCurrentGraph,
       onOpenSavedGraphs: openSavedGraphs,
+      onSelectionSort: _openSelectionSort,
       onOpenHelp: () => Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const HelpScreen()),
       ),
       onBackHome: () => Navigator.popUntil(context, (route) => route.isFirst),
     );
+  }
+
+  Future<void> _openSelectionSort() async {
+    if (graphController.edges.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Agrega al menos una arista con peso.')),
+      );
+      return;
+    }
+
+    final sortedEdges = await Navigator.push<List<EdgeModel>>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SelectionSortScreen(graphEdges: graphController.edges),
+      ),
+    );
+    if (!mounted || sortedEdges == null) return;
+
+    pushUndoSnapshot();
+    setState(() {
+      graphController.edges
+        ..clear()
+        ..addAll(sortedEdges);
+      graphController.clearSelection();
+    });
   }
 
   // ---------------------------------------------------------------- Canvas

@@ -13,7 +13,8 @@ class SelectionSortStep {
 }
 
 class SelectionSortResult {
-  final List<int> sorted;
+  final List<num> sorted;
+  final List<int> sortedIndices;
   final List<SelectionSortStep> steps;
   final int comparisons;
   final int swaps;
@@ -21,6 +22,7 @@ class SelectionSortResult {
 
   const SelectionSortResult({
     required this.sorted,
+    required this.sortedIndices,
     required this.steps,
     required this.comparisons,
     required this.swaps,
@@ -32,20 +34,22 @@ class SelectionSortAlgorithm {
   static const int timingRuns = 200;
 
   static SelectionSortResult run(
-    List<int> input, {
+    List<num> input, {
     required bool descending,
   }) {
     final watch = Stopwatch()..start();
     for (var run = 0; run < timingRuns; run++) {
-      _sort(List<int>.of(input), descending, null);
+      _sort(List<num>.of(input), descending, null);
     }
     watch.stop();
 
-    final values = List<int>.of(input);
+    final values = List<num>.of(input);
+    final indices = List<int>.generate(values.length, (index) => index);
     final steps = <SelectionSortStep>[];
-    final counts = _sort(values, descending, steps);
+    final counts = _sort(values, descending, steps, indices);
     return SelectionSortResult(
       sorted: values,
+      sortedIndices: indices,
       steps: steps,
       comparisons: counts.$1,
       swaps: counts.$2,
@@ -54,9 +58,10 @@ class SelectionSortAlgorithm {
   }
 
   static (int, int) _sort(
-    List<int> values,
+    List<num> values,
     bool descending,
     List<SelectionSortStep>? steps,
+    [List<int>? indices]
   ) {
     var comparisons = 0;
     var swaps = 0;
@@ -82,6 +87,11 @@ class SelectionSortAlgorithm {
         final temp = values[i];
         values[i] = values[minimum];
         values[minimum] = temp;
+        if (indices != null) {
+          final index = indices[i];
+          indices[i] = indices[minimum];
+          indices[minimum] = index;
+        }
         swaps++;
       }
       steps?.add(

@@ -10,6 +10,7 @@ class GraphDrawer extends StatelessWidget {
   final VoidCallback? onNewCanvas;
   final VoidCallback? onSaveGraph;
   final VoidCallback? onOpenSavedGraphs;
+  final VoidCallback? onSelectionSort;
   final VoidCallback onOpenHelp;
   final VoidCallback onBackHome;
   final String algorithmTitle;
@@ -28,6 +29,7 @@ class GraphDrawer extends StatelessWidget {
     this.onNewCanvas,
     this.onSaveGraph,
     this.onOpenSavedGraphs,
+    this.onSelectionSort,
     this.algorithmTitle = 'Lienzo General',
     this.headerIcon = Icons.hub_rounded,
     this.newLabel = 'Nuevo Lienzo',
@@ -137,6 +139,15 @@ class GraphDrawer extends StatelessWidget {
                 textColor: textColor,
                 label: savedLabel,
                 action: onOpenSavedGraphs!,
+              ),
+            if (onSelectionSort != null)
+              _tile(
+                context,
+                icon: Icons.sort_rounded,
+                iconColor: activeColor,
+                textColor: textColor,
+                label: 'Selection Sort por pesos',
+                action: onSelectionSort!,
               ),
             const Divider(),
           ],

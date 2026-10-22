@@ -4,7 +4,7 @@ import 'package:graph_app/algorithms/sorting/selection_sort/logic/selection_sort
 void main() {
   test('ordena de menor a mayor', () {
     final result = SelectionSortAlgorithm.run(
-      [64, 25, 12, 22, 11],
+      <num>[64, 25, 12, 22, 11],
       descending: false,
     );
 
@@ -15,7 +15,7 @@ void main() {
 
   test('ordena de mayor a menor', () {
     final result = SelectionSortAlgorithm.run(
-      [64, 25, 12, 22, 11],
+      <num>[64, 25, 12, 22, 11],
       descending: true,
     );
 

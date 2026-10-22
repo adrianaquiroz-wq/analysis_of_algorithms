@@ -4,7 +4,7 @@ import 'selection_sort_algorithm.dart';
 enum SelectionPlayState { idle, playing, paused, done }
 
 class SelectionSortController extends ChangeNotifier {
-  List<int> values;
+  List<num> values;
   bool descending = false;
   double speed = 1;
   SelectionPlayState state = SelectionPlayState.idle;
@@ -16,12 +16,12 @@ class SelectionSortController extends ChangeNotifier {
   String? note;
   int _runId = 0;
 
-  SelectionSortController(List<int> initialValues) : values = List.of(initialValues);
+  SelectionSortController(List<num> initialValues) : values = List.of(initialValues);
 
   bool get isPlaying => state == SelectionPlayState.playing;
   Duration get stepDuration => Duration(milliseconds: (260 / speed).round());
 
-  void setValues(List<int> next) {
+  void setValues(List<num> next) {
     values = List.of(next);
     reset();
   }
@@ -91,6 +91,11 @@ class SelectionSortController extends ChangeNotifier {
     selectedIndex = step.selectedIndex;
     scanIndex = step.scanIndex;
     minimumIndex = step.minimumIndex;
+    if (step.swapped && step.selectedIndex != step.minimumIndex) {
+      final value = values[step.selectedIndex];
+      values[step.selectedIndex] = values[step.minimumIndex];
+      values[step.minimumIndex] = value;
+    }
     note = step.swapped
         ? 'Se coloca el menor elemento restante en la posición ${step.selectedIndex}.'
         : 'Se busca el menor elemento desde la posición ${step.selectedIndex}.';
