@@ -1,6 +1,6 @@
 import 'package:graph_app/algorithms/merge_sort/merge_sort_info.dart';
 import 'package:graph_app/algorithms/sorting/insertion_sort/insertion_sort_info.dart';
-import 'package:graph_app/algorithms/sorting/selection_sort/selection_sort_info.dart';
+import 'package:graph_app/algorithms/selection_sort/selection_sort_info.dart';
 import 'package:graph_app/algorithms/sorting/shell_sort/shell_sort_info.dart';
 import 'package:graph_app/algorithms/sorting/sorting_info.dart';
 

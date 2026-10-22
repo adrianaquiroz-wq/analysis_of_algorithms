@@ -17,7 +17,7 @@ import 'package:graph_app/widgets/graph_app_bar.dart';
 import 'package:graph_app/widgets/graph_canvas.dart';
 import 'package:graph_app/widgets/right_toolbar.dart';
 import 'package:graph_app/widgets/selection_actions_bar.dart';
-import 'package:graph_app/algorithms/sorting/selection_sort/screens/selection_sort_screen.dart';
+import 'package:graph_app/algorithms/selection_sort/screens/selection_sort_screen.dart';
 
 import 'graph_persistence_mixin.dart';
 import 'widgets/algorithm_action_button.dart';
