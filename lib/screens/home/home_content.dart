@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:graph_app/screens/graph/graph_screen.dart';
+//import 'package:graph_app/screens/graph/graph_screen.dart';
 import 'package:graph_app/theme/app_palette.dart';
 
 import 'category_cards.dart';
