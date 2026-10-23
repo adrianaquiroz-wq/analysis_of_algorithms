@@ -3,7 +3,7 @@ import 'dart:math';
 /// Reglas y utilidades para los números que se van a ordenar.
 class SortInput {
   static const int minCount = 2;
-  static const int maxCount = 30;
+  static const int maxCount = 100;
   static const int minValue = 1;
   static const int maxValue = 100;
   static const List<int> defaultValues = [45, 12, 78, 33, 90, 5, 60, 21];
