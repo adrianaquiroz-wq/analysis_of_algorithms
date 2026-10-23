@@ -48,7 +48,7 @@ mixin SortPersistenceMixin<T extends StatefulWidget> on State<T> {
   Future<void> openSaved() async {
     final result = await Navigator.push<SavedSort>(
       context,
-      MaterialPageRoute(builder: (_) => SavedSortsScreen(sortId: sortId)),
+      MaterialPageRoute(builder: (_) => const SavedSortsScreen()),
     );
     if (result == null || !mounted) return;
 

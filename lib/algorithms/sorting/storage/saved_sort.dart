@@ -9,6 +9,12 @@ class SavedSort {
   final List<int> values;
   final bool descending;
 
+  /// Nombre legible del método: 'merge_sort' -> 'Merge Sort'.
+  String get methodLabel => sortId
+      .split('_')
+      .map((w) => w.isEmpty ? w : '${w[0].toUpperCase()}${w.substring(1)}')
+      .join(' ');
+
   const SavedSort({
     required this.id,
     required this.name,

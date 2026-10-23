@@ -5,12 +5,12 @@ import 'package:graph_app/theme/app_palette.dart';
 import 'package:graph_app/theme/theme_builder.dart';
 import 'package:graph_app/utils/graph_storage_dialogs.dart';
 
-/// Lista los conjuntos guardados de un método. Al tocar uno hace pop
-/// devolviendo el [SavedSort] para que la pantalla anterior lo cargue.
+/// Lista TODOS los conjuntos guardados, de cualquier método de ordenamiento
+/// (cada uno indica con qué método se guardó). Al tocar uno hace pop
+/// devolviendo el [SavedSort] para que la pantalla anterior lo cargue: los
+/// números y el orden sirven para cualquier método.
 class SavedSortsScreen extends StatefulWidget {
-  final String sortId;
-
-  const SavedSortsScreen({super.key, required this.sortId});
+  const SavedSortsScreen({super.key});
 
   @override
   State<SavedSortsScreen> createState() => _SavedSortsScreenState();
@@ -23,11 +23,10 @@ class _SavedSortsScreenState extends State<SavedSortsScreen> {
   @override
   void initState() {
     super.initState();
-    _future = _storage.list(sortId: widget.sortId);
+    _future = _storage.list();
   }
 
-  void _reload() =>
-      setState(() => _future = _storage.list(sortId: widget.sortId));
+  void _reload() => setState(() => _future = _storage.list());
 
   Future<void> _delete(SavedSort item, bool isDark) async {
     final ok = await GraphStorageDialogs.confirmDelete(
@@ -91,7 +90,6 @@ class _SavedSortsScreenState extends State<SavedSortsScreen> {
   Widget _tile(SavedSort item, AppPalette p, bool isDark) {
     return Material(
       color: p.card,
-      borderRadius: BorderRadius.circular(12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: p.cardBorder),
@@ -105,11 +103,12 @@ class _SavedSortsScreenState extends State<SavedSortsScreen> {
           style: TextStyle(color: p.text, fontWeight: FontWeight.bold),
         ),
         subtitle: Text(
-          '${item.values.length} números · '
-          '${item.descending ? 'Descendente' : 'Ascendente'} · '
+          '${item.methodLabel} · ${item.values.length} números · '
+          '${item.descending ? 'Descendente' : 'Ascendente'}\n'
           '${_date(item.updatedAt)}',
           style: TextStyle(color: p.subtleText, fontSize: 12),
         ),
+        isThreeLine: true,
         trailing: IconButton(
           icon: const Icon(
             Icons.delete_outline_rounded,
