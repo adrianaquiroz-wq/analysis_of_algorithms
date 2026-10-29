@@ -274,7 +274,9 @@ class _GraphScreenState extends State<GraphScreen>
       } else {
         _dijkstraTargetId = node.id;
       }
-      graphController.clearSelection();
+      graphController.selectedNodeId = node.id;
+      graphController.selectedEdgeId = null;
+      graphController.selectedNodeIds.clear();
     });
   }
 
@@ -500,6 +502,52 @@ class _GraphScreenState extends State<GraphScreen>
                     Text(
                       'Origen: ${source ?? 'pendiente'}\n'
                       'Destino: ${target ?? 'pendiente'}',
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: _dijkstraSourceId,
+                      decoration: const InputDecoration(
+                        labelText: 'Nodo de inicio',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: [
+                        for (final node in graphController.nodes)
+                          DropdownMenuItem(
+                            value: node.id,
+                            child: Text(node.label),
+                          ),
+                      ],
+                      onChanged: _dijkstraRunning
+                          ? null
+                          : (value) => refresh(
+                                () {
+                                  _dijkstraSourceId = value;
+                                  _dijkstraResult = null;
+                                },
+                              ),
+                    ),
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<String>(
+                      initialValue: _dijkstraTargetId,
+                      decoration: const InputDecoration(
+                        labelText: 'Nodo final',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: [
+                        for (final node in graphController.nodes)
+                          DropdownMenuItem(
+                            value: node.id,
+                            child: Text(node.label),
+                          ),
+                      ],
+                      onChanged: _dijkstraRunning
+                          ? null
+                          : (value) => refresh(
+                                () {
+                                  _dijkstraTargetId = value;
+                                  _dijkstraResult = null;
+                                },
+                              ),
                     ),
                     if (_dijkstraResult != null) ...[
                       const SizedBox(height: 12),

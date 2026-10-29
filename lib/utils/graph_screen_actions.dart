@@ -44,13 +44,19 @@ mixin GraphScreenActions<T extends StatefulWidget> on State<T> {
   }
 
   void deleteSelectedArea() {
-    if (graphController.selectedNodeIds.isEmpty) return;
+    if (graphController.selectedNodeIds.isEmpty &&
+        graphController.selectedEdgeIds.isEmpty) {
+      return;
+    }
     pushUndoSnapshot();
     setState(() {
       for (final id in graphController.selectedNodeIds.toList()) {
         graphController.removeNode(id);
       }
-      graphController.selectedNodeIds.clear();
+      for (final id in graphController.selectedEdgeIds.toList()) {
+        graphController.removeEdge(id);
+      }
+      graphController.clearSelection();
     });
   }
 
