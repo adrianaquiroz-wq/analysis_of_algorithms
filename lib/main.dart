@@ -3,7 +3,6 @@ import 'package:graph_app/screens/home/home_screen.dart';
 import 'package:graph_app/theme/app_theme.dart';
 import 'package:graph_app/theme/theme_builder.dart';
 import 'package:graph_app/theme/theme_controller.dart';
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ThemeController.instance.load();
