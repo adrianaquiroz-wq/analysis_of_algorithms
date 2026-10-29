@@ -75,4 +75,56 @@ void main() {
     expect(result.pathNodeIds, isEmpty);
     expect(result.distance, double.infinity);
   });
+
+  test('rechaza bucles y encuentra la ruta máxima en un DAG', () {
+    expect(
+      () => DijkstraAlgorithm.run(
+        nodes: nodes,
+        edges: [
+          EdgeModel(
+            id: 'aa',
+            sourceId: 'a',
+            targetId: 'a',
+            type: EdgeType.directed,
+            weight: 1,
+          ),
+        ],
+        sourceId: 'a',
+        targetId: 'b',
+      ),
+      throwsA(isA<FormatException>()),
+    );
+
+    final result = DijkstraAlgorithm.run(
+      nodes: nodes,
+      edges: [
+        EdgeModel(
+          id: 'ab',
+          sourceId: 'a',
+          targetId: 'b',
+          type: EdgeType.directed,
+          weight: 4,
+        ),
+        EdgeModel(
+          id: 'ac',
+          sourceId: 'a',
+          targetId: 'c',
+          type: EdgeType.directed,
+          weight: 3,
+        ),
+        EdgeModel(
+          id: 'cb',
+          sourceId: 'c',
+          targetId: 'b',
+          type: EdgeType.directed,
+          weight: 5,
+        ),
+      ],
+      sourceId: 'a',
+      targetId: 'b',
+      optimization: DijkstraOptimization.maximize,
+    );
+    expect(result.pathNodeIds, ['a', 'c', 'b']);
+    expect(result.distance, 8);
+  });
 }

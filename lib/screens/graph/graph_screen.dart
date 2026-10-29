@@ -70,6 +70,8 @@ class _GraphScreenState extends State<GraphScreen>
   int _dijkstraStep = 0;
   bool _dijkstraRunning = false;
   bool _dijkstraPaused = false;
+  DijkstraOptimization _dijkstraOptimization =
+      DijkstraOptimization.minimize;
   int _dijkstraRunId = 0;
   Map<String, Color> _dijkstraNodeColors = {};
   Map<String, Color> _dijkstraEdgeColors = {};
@@ -281,86 +283,122 @@ class _GraphScreenState extends State<GraphScreen>
   }
 
   Widget _buildKruskalPanel() {
-      final result = _kruskalResult;
-      return Positioned(
-        left: 16,
-        right: 16,
-        bottom: 16,
-        child: Card(
-          color: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Kruskal · árbol de expansión mínima',
-                  style: TextStyle(
-                    color: isDarkMode ? Colors.white : Colors.black87,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  result == null
-                      ? 'Ordena las aristas y evita ciclos para construir el árbol.'
-                      : 'Aristas seleccionadas: ${result.minimumSpanningTreeEdgeIds.length}'
-                          ' · Peso total: ${result.totalWeight}',
-                  style: TextStyle(
-                    color: isDarkMode ? Colors.white70 : Colors.black54,
-                  ),
-                ),
-                if (result != null && result.connectedNodeIds.length < graphController.nodes.length)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      'El grafo no es conexo: se muestran varios componentes.',
-                      style: TextStyle(
-                        color: isDarkMode ? Colors.orangeAccent : Colors.deepOrange,
-                      ),
-                    ),
-                  ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
+    return Positioned(
+      right: 16,
+      bottom: 60,
+      child: FloatingActionButton.extended(
+        onPressed: _showKruskalOptions,
+        icon: const Icon(Icons.account_tree_rounded),
+        label: const Text('Kruskal'),
+      ),
+    );
+  }
+
+  Future<void> _showKruskalOptions() async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, dialogSetState) {
+          void refresh(VoidCallback action) {
+            setState(action);
+            dialogSetState(() {});
+          }
+
+          final result = _kruskalResult;
+          return AlertDialog(
+            title: const Text('Kruskal · opciones'),
+            content: SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ElevatedButton.icon(
-                      onPressed: _kruskalRunning ? null : _startKruskal,
-                      icon: const Icon(Icons.play_arrow_rounded),
-                      label: const Text('Construir árbol'),
+                    const Text(
+                      'Construye el árbol de expansión mínima '
+                      'seleccionando aristas sin formar ciclos.',
                     ),
-                    if (_kruskalRunning)
-                      OutlinedButton.icon(
-                        onPressed: () => setState(
-                          () => _kruskalPaused = !_kruskalPaused,
+                    const SizedBox(height: 12),
+                    Text(
+                      result == null
+                          ? 'Todavía no se ha construido el árbol.'
+                          : 'Aristas seleccionadas: '
+                              '${result.minimumSpanningTreeEdgeIds.length}'
+                              ' · Peso total: ${result.totalWeight}',
+                    ),
+                    if (result != null &&
+                        result.connectedNodeIds.length <
+                            graphController.nodes.length)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 8),
+                        child: Text(
+                          'El grafo no es conexo: se muestran varios componentes.',
+                          style: TextStyle(color: Colors.deepOrange),
                         ),
-                        icon: Icon(
-                          _kruskalPaused
-                              ? Icons.play_arrow_rounded
-                              : Icons.pause_rounded,
+                      ),
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed:
+                              _kruskalRunning ? null : _startKruskal,
+                          icon: const Icon(Icons.play_arrow_rounded),
+                          label: const Text('Construir árbol'),
                         ),
-                        label: Text(_kruskalPaused ? 'Continuar' : 'Pausa'),
-                      ),
-                    if (_kruskalRunning)
-                      OutlinedButton.icon(
-                        onPressed: _kruskalPaused ? _advanceKruskal : null,
-                        icon: const Icon(Icons.skip_next_rounded),
-                        label: const Text('Paso'),
-                      ),
-                    OutlinedButton.icon(
-                      onPressed: _kruskalRunning ? null : _resetKruskal,
-                      icon: const Icon(Icons.restart_alt_rounded),
-                      label: const Text('Reiniciar'),
+                        if (_kruskalRunning)
+                          OutlinedButton.icon(
+                            onPressed: () => refresh(
+                              () => _kruskalPaused = !_kruskalPaused,
+                            ),
+                            icon: Icon(
+                              _kruskalPaused
+                                  ? Icons.play_arrow_rounded
+                                  : Icons.pause_rounded,
+                            ),
+                            label: Text(
+                              _kruskalPaused ? 'Continuar' : 'Pausa',
+                            ),
+                          ),
+                        if (_kruskalRunning)
+                          OutlinedButton.icon(
+                            onPressed: _kruskalPaused
+                                ? () {
+                                    _advanceKruskal();
+                                    dialogSetState(() {});
+                                  }
+                                : null,
+                            icon: const Icon(Icons.skip_next_rounded),
+                            label: const Text('Paso'),
+                          ),
+                        OutlinedButton.icon(
+                          onPressed: _kruskalRunning
+                              ? null
+                              : () {
+                                  _resetKruskal();
+                                  dialogSetState(() {});
+                                },
+                          icon: const Icon(Icons.restart_alt_rounded),
+                          label: const Text('Reiniciar'),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
-      );
-    }
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Cerrar'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
 
     void _startKruskal() {
       try {
@@ -527,6 +565,34 @@ class _GraphScreenState extends State<GraphScreen>
                               ),
                     ),
                     const SizedBox(height: 10),
+                    DropdownButtonFormField<DijkstraOptimization>(
+                      initialValue: _dijkstraOptimization,
+                      decoration: const InputDecoration(
+                        labelText: 'Objetivo',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: DijkstraOptimization.minimize,
+                          child: Text('Minimizar distancia'),
+                        ),
+                        DropdownMenuItem(
+                          value: DijkstraOptimization.maximize,
+                          child: Text('Maximizar distancia'),
+                        ),
+                      ],
+                      onChanged: _dijkstraRunning
+                          ? null
+                          : (value) => refresh(
+                                () {
+                                  if (value != null) {
+                                    _dijkstraOptimization = value;
+                                    _dijkstraResult = null;
+                                  }
+                                },
+                              ),
+                    ),
+                    const SizedBox(height: 10),
                     DropdownButtonFormField<String>(
                       initialValue: _dijkstraTargetId,
                       decoration: const InputDecoration(
@@ -651,6 +717,7 @@ class _GraphScreenState extends State<GraphScreen>
         edges: graphController.edges,
         sourceId: _dijkstraSourceId!,
         targetId: _dijkstraTargetId!,
+        optimization: _dijkstraOptimization,
       );
       setState(() {
         _dijkstraResult = result;
