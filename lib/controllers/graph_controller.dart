@@ -59,13 +59,17 @@ class GraphController {
     selectedNodeIds.remove(id);
   }
 
-  void addEdge(String sourceId, String targetId) {
+  void addEdge(
+    String sourceId,
+    String targetId, {
+    EdgeType type = EdgeType.directed,
+  }) {
     edges.add(
       EdgeModel(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         sourceId: sourceId,
         targetId: targetId,
-        type: EdgeType.directed,
+        type: type,
       ),
     );
   }

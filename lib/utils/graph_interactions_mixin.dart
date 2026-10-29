@@ -18,6 +18,8 @@ mixin GraphInteractionsMixin<T extends StatefulWidget>
   bool get isDarkMode;
   set isDarkMode(bool value);
 
+  EdgeType get newEdgeType => EdgeType.directed;
+
   // Indica si el flujo de Asignación Bipartida está activo. Cuando está
   // activo, los nodos creados con la herramienta 'node' normal pasan a
   // formar parte del Conjunto A (los de 'bipartite_node' son Conjunto B).
@@ -182,7 +184,7 @@ mixin GraphInteractionsMixin<T extends StatefulWidget>
 
         pushUndoSnapshot();
         setState(() {
-          graphController.addEdge(node.id, node.id);
+          graphController.addEdge(node.id, node.id, type: newEdgeType);
           graphController.clearSelection();
         });
       } else {
@@ -202,6 +204,7 @@ mixin GraphInteractionsMixin<T extends StatefulWidget>
           graphController.addEdge(
             graphController.pendingSourceNodeId!,
             node.id,
+            type: newEdgeType,
           );
           graphController.clearSelection();
         });

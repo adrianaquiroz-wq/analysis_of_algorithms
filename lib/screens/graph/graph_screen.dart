@@ -99,6 +99,10 @@ class _GraphScreenState extends State<GraphScreen>
   bool get isBipartiteMode => _isBipartiteAssignmentFlow;
 
   @override
+  EdgeType get newEdgeType =>
+      _algorithmType == 'kruskal' ? EdgeType.simple : EdgeType.directed;
+
+  @override
   void dispose() {
     transformationController.dispose();
     super.dispose();
@@ -258,7 +262,7 @@ class _GraphScreenState extends State<GraphScreen>
   }
 
   void _handleNodeTap(NodeModel node) {
-    if (_algorithmType != 'dijkstra') {
+    if (_algorithmType != 'dijkstra' || activeTool != 'select') {
       handleNodeTap(node);
       return;
     }
