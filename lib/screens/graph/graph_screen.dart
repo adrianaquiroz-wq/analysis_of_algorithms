@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:graph_app/algorithms/algorithm_registry.dart';
 import 'package:graph_app/algorithms/dijkstra/logic/dijkstra_algorithm.dart';
+import 'package:graph_app/algorithms/kruskal/logic/kruskal_algorithm.dart';
 import 'package:graph_app/controllers/graph_controller.dart';
 import 'package:graph_app/models/edge_model.dart';
 import 'package:graph_app/models/node_model.dart';
@@ -72,6 +73,13 @@ class _GraphScreenState extends State<GraphScreen>
   int _dijkstraRunId = 0;
   Map<String, Color> _dijkstraNodeColors = {};
   Map<String, Color> _dijkstraEdgeColors = {};
+  KruskalResult? _kruskalResult;
+  int _kruskalStep = 0;
+  bool _kruskalRunning = false;
+  bool _kruskalPaused = false;
+  int _kruskalRunId = 0;
+  Map<String, Color> _kruskalNodeColors = {};
+  Map<String, Color> _kruskalEdgeColors = {};
 
   // Tema global: se lee y se escribe en el ThemeController.
   @override
@@ -129,6 +137,7 @@ class _GraphScreenState extends State<GraphScreen>
           Align(alignment: Alignment.centerRight, child: _buildToolbar()),
           _buildSolverButton(),
           if (_algorithmType == 'dijkstra') _buildDijkstraPanel(),
+          if (_algorithmType == 'kruskal') _buildKruskalPanel(),
         ],
       ),
     );
@@ -263,6 +272,187 @@ class _GraphScreenState extends State<GraphScreen>
       }
       graphController.clearSelection();
     });
+  }
+
+  Widget _buildKruskalPanel() {
+      final result = _kruskalResult;
+      return Positioned(
+        left: 16,
+        right: 16,
+        bottom: 16,
+        child: Card(
+          color: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Kruskal · árbol de expansión mínima',
+                  style: TextStyle(
+                    color: isDarkMode ? Colors.white : Colors.black87,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  result == null
+                      ? 'Ordena las aristas y evita ciclos para construir el árbol.'
+                      : 'Aristas seleccionadas: ${result.minimumSpanningTreeEdgeIds.length}'
+                          ' · Peso total: ${result.totalWeight}',
+                  style: TextStyle(
+                    color: isDarkMode ? Colors.white70 : Colors.black54,
+                  ),
+                ),
+                if (result != null && result.connectedNodeIds.length < graphController.nodes.length)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      'El grafo no es conexo: se muestran varios componentes.',
+                      style: TextStyle(
+                        color: isDarkMode ? Colors.orangeAccent : Colors.deepOrange,
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: _kruskalRunning ? null : _startKruskal,
+                      icon: const Icon(Icons.play_arrow_rounded),
+                      label: const Text('Construir árbol'),
+                    ),
+                    if (_kruskalRunning)
+                      OutlinedButton.icon(
+                        onPressed: () => setState(
+                          () => _kruskalPaused = !_kruskalPaused,
+                        ),
+                        icon: Icon(
+                          _kruskalPaused
+                              ? Icons.play_arrow_rounded
+                              : Icons.pause_rounded,
+                        ),
+                        label: Text(_kruskalPaused ? 'Continuar' : 'Pausa'),
+                      ),
+                    if (_kruskalRunning)
+                      OutlinedButton.icon(
+                        onPressed: _kruskalPaused ? _advanceKruskal : null,
+                        icon: const Icon(Icons.skip_next_rounded),
+                        label: const Text('Paso'),
+                      ),
+                    OutlinedButton.icon(
+                      onPressed: _kruskalRunning ? null : _resetKruskal,
+                      icon: const Icon(Icons.restart_alt_rounded),
+                      label: const Text('Reiniciar'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    void _startKruskal() {
+      try {
+        _saveKruskalColors();
+        final result = KruskalAlgorithm.run(
+          nodes: graphController.nodes,
+          edges: graphController.edges,
+        );
+        setState(() {
+          _kruskalResult = result;
+          _kruskalStep = 0;
+          _kruskalRunning = true;
+          _kruskalPaused = false;
+        });
+        _playKruskal(++_kruskalRunId);
+      } on FormatException catch (error) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.message)));
+      }
+    }
+
+    Future<void> _playKruskal(int runId) async {
+      final result = _kruskalResult!;
+      while (_kruskalStep < result.steps.length) {
+        if (!mounted || runId != _kruskalRunId) return;
+        if (_kruskalPaused) {
+          await Future<void>.delayed(const Duration(milliseconds: 100));
+          continue;
+        }
+        _advanceKruskal();
+        await Future<void>.delayed(const Duration(milliseconds: 700));
+      }
+      if (!mounted || runId != _kruskalRunId) return;
+      setState(() {
+        for (final node in graphController.nodes) {
+          node.color = result.connectedNodeIds.contains(node.id)
+              ? Colors.greenAccent
+              : Colors.grey;
+        }
+        for (final edge in graphController.edges) {
+          edge.color = result.minimumSpanningTreeEdgeIds.contains(edge.id)
+              ? Colors.cyanAccent
+              : Colors.grey;
+        }
+        _kruskalRunning = false;
+        _kruskalPaused = false;
+      });
+    }
+
+    void _advanceKruskal() {
+      final result = _kruskalResult;
+      if (result == null || _kruskalStep >= result.steps.length) return;
+      final step = result.steps[_kruskalStep++];
+      setState(() {
+        for (final edge in graphController.edges) {
+          if (step.selectedEdgeIds.contains(edge.id)) {
+            edge.color = Colors.cyanAccent;
+          } else if (edge.id == step.edgeId) {
+            edge.color = step.decision == KruskalDecision.accepted
+                ? Colors.amber
+                : Colors.redAccent;
+          } else {
+            edge.color = _kruskalEdgeColors[edge.id] ?? edge.color;
+          }
+        }
+        for (final node in graphController.nodes) {
+          node.color = step.connectedNodeIds.contains(node.id)
+              ? Colors.greenAccent
+              : _kruskalNodeColors[node.id] ?? node.color;
+        }
+      });
+    }
+
+    void _saveKruskalColors() {
+      _kruskalNodeColors = {
+        for (final node in graphController.nodes) node.id: node.color,
+      };
+      _kruskalEdgeColors = {
+        for (final edge in graphController.edges) edge.id: edge.color,
+      };
+    }
+
+    void _resetKruskal() {
+      _kruskalRunId++;
+      for (final node in graphController.nodes) {
+        final color = _kruskalNodeColors[node.id];
+        if (color != null) node.color = color;
+      }
+      for (final edge in graphController.edges) {
+        final color = _kruskalEdgeColors[edge.id];
+        if (color != null) edge.color = color;
+      }
+      _kruskalResult = null;
+      _kruskalStep = 0;
+      _kruskalRunning = false;
+      _kruskalPaused = false;
+      setState(() {});
   }
 
   Widget _buildDijkstraPanel() {

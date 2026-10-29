@@ -4,6 +4,7 @@ import 'cpm/cpm_info.dart';
 import 'northwest/northwest_info.dart';
 import 'simple_graph/simple_graph_info.dart';
 import 'dijkstra/dijkstra_info.dart';
+import 'kruskal/kruskal_info.dart';
 
 export 'algorithm_info.dart';
 
@@ -11,6 +12,7 @@ export 'algorithm_info.dart';
 final List<AlgorithmInfo> graphAlgorithms = [
   simpleGraphInfo,
   dijkstraInfo,
+  kruskalInfo,
   assignmentInfo,
   cpmInfo,
   northwestInfo,
