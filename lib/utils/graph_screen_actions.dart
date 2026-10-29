@@ -39,7 +39,7 @@ mixin GraphScreenActions<T extends StatefulWidget> on State<T> {
       for (final id in graphController.selectedNodeIds.toList()) {
         graphController.removeNode(id);
       }
-      graphController.selectedNodeIds.clear();
+      graphController.clearSelection();
     });
   }
 

@@ -42,10 +42,11 @@ class FloatingMenu extends StatelessWidget {
             icon: const Icon(Icons.delete, color: Colors.redAccent, size: 20),
             onPressed: onDelete,
             tooltip: 'Eliminar',
-            constraints: const BoxConstraints(), // Elimina restricciones por defecto para apretar el tamaño
-            padding: const EdgeInsets.all(
-              8,
-            ), // Padding controlado para el botón
+            constraints: const BoxConstraints(
+              minWidth: 40,
+              minHeight: 40,
+            ),
+            padding: EdgeInsets.zero,
           ),
         ],
       ),

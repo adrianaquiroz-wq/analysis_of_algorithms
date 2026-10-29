@@ -214,13 +214,17 @@ mixin GraphInteractionsMixin<T extends StatefulWidget>
 
   void handleDeleteNode(NodeModel node) {
     pushUndoSnapshot();
-    setState(() => graphController.removeNode(node.id));
+    setState(() {
+      graphController.removeNode(node.id);
+      graphController.clearSelection();
+    });
   }
 
   void handleDeleteEdge(EdgeModel edge) {
     pushUndoSnapshot();
     setState(() {
       graphController.removeEdge(edge.id);
+      graphController.clearSelection();
     });
   }
 

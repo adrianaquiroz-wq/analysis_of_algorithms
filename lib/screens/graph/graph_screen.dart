@@ -460,98 +460,129 @@ class _GraphScreenState extends State<GraphScreen>
   }
 
   Widget _buildDijkstraPanel() {
-    final source = _nodeLabel(_dijkstraSourceId);
-    final target = _nodeLabel(_dijkstraTargetId);
     return Positioned(
-      left: 16,
       right: 16,
-      bottom: 16,
-      child: Card(
-        color: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Dijkstra · ruta mínima',
-                style: TextStyle(
-                  color: isDarkMode ? Colors.white : Colors.black87,
-                  fontWeight: FontWeight.bold,
+      bottom: 60,
+      child: FloatingActionButton.extended(
+        onPressed: _showDijkstraOptions,
+        icon: const Icon(Icons.route_rounded),
+        label: const Text('Dijkstra'),
+      ),
+    );
+  }
+
+  Future<void> _showDijkstraOptions() async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, dialogSetState) {
+          void refresh(VoidCallback action) {
+            setState(action);
+            dialogSetState(() {});
+          }
+
+          final source = _nodeLabel(_dijkstraSourceId);
+          final target = _nodeLabel(_dijkstraTargetId);
+          return AlertDialog(
+            title: const Text('Dijkstra · opciones'),
+            content: SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Selecciona el origen y el destino haciendo clic '
+                      'sobre los nodos del lienzo.',
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Origen: ${source ?? 'pendiente'}\n'
+                      'Destino: ${target ?? 'pendiente'}',
+                    ),
+                    if (_dijkstraResult != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        _dijkstraResult!.pathNodeIds.isEmpty
+                            ? 'No existe una ruta entre los nodos seleccionados.'
+                            : 'Ruta: ${_dijkstraResult!.pathNodeIds.map(_nodeLabel).join(' → ')}\n'
+                                'Distancia: ${_dijkstraResult!.distance}',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      if (_dijkstraStep > 0) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          'Distancias: ${_dijkstraResult!.steps[_dijkstraStep - 1].distances.entries.map((entry) => '${_nodeLabel(entry.key)}: ${entry.value == double.infinity ? '∞' : entry.value}').join(' · ')}',
+                        ),
+                      ],
+                    ],
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: _dijkstraRunning ||
+                                  _dijkstraSourceId == null ||
+                                  _dijkstraTargetId == null
+                              ? null
+                              : () {
+                                  _startDijkstra();
+                                  dialogSetState(() {});
+                                },
+                          icon: const Icon(Icons.play_arrow_rounded),
+                          label: const Text('Ejecutar'),
+                        ),
+                        if (_dijkstraRunning)
+                          OutlinedButton.icon(
+                            onPressed: () => refresh(
+                              () => _dijkstraPaused = !_dijkstraPaused,
+                            ),
+                            icon: Icon(
+                              _dijkstraPaused
+                                  ? Icons.play_arrow_rounded
+                                  : Icons.pause_rounded,
+                            ),
+                            label: Text(
+                              _dijkstraPaused ? 'Continuar' : 'Pausa',
+                            ),
+                          ),
+                        if (_dijkstraRunning)
+                          OutlinedButton.icon(
+                            onPressed: _dijkstraPaused
+                                ? () {
+                                    _advanceDijkstra();
+                                    dialogSetState(() {});
+                                  }
+                                : null,
+                            icon: const Icon(Icons.skip_next_rounded),
+                            label: const Text('Paso'),
+                          ),
+                        OutlinedButton.icon(
+                          onPressed: _dijkstraRunning
+                              ? null
+                              : () {
+                                  _resetDijkstra();
+                                  dialogSetState(() {});
+                                },
+                          icon: const Icon(Icons.restart_alt_rounded),
+                          label: const Text('Reiniciar'),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Origen: ${source ?? 'haz clic en un nodo'}   '
-                'Destino: ${target ?? 'haz clic en otro nodo'}',
-                style: TextStyle(
-                  color: isDarkMode ? Colors.white70 : Colors.black54,
-                ),
-              ),
-              if (_dijkstraResult != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Text(
-                    _dijkstraResult!.pathNodeIds.isEmpty
-                        ? 'No existe una ruta entre los nodos seleccionados.'
-                        : 'Ruta: ${_dijkstraResult!.pathNodeIds.map(_nodeLabel).join(' → ')}'
-                            '   Distancia: ${_dijkstraResult!.distance}',
-                    style: TextStyle(
-                      color: isDarkMode ? Colors.white : Colors.black87,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              if (_dijkstraResult != null && _dijkstraStep > 0)
-                Text(
-                  'Distancias: ${_dijkstraResult!.steps[_dijkstraStep - 1].distances.entries.map((entry) => '${_nodeLabel(entry.key)}: ${entry.value == double.infinity ? '∞' : entry.value}').join(' · ')}',
-                  style: TextStyle(
-                    color: isDarkMode ? Colors.white70 : Colors.black54,
-                    fontSize: 12,
-                  ),
-                ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: _dijkstraRunning ||
-                            _dijkstraSourceId == null ||
-                            _dijkstraTargetId == null
-                        ? null
-                        : _startDijkstra,
-                    icon: const Icon(Icons.play_arrow_rounded),
-                    label: const Text('Ejecutar'),
-                  ),
-                  if (_dijkstraRunning)
-                    OutlinedButton.icon(
-                      onPressed: () => setState(
-                        () => _dijkstraPaused = !_dijkstraPaused,
-                      ),
-                      icon: Icon(
-                        _dijkstraPaused
-                            ? Icons.play_arrow_rounded
-                            : Icons.pause_rounded,
-                      ),
-                      label: Text(_dijkstraPaused ? 'Continuar' : 'Pausa'),
-                    ),
-                  if (_dijkstraRunning)
-                    OutlinedButton.icon(
-                      onPressed: _dijkstraPaused ? _advanceDijkstra : null,
-                      icon: const Icon(Icons.skip_next_rounded),
-                      label: const Text('Paso'),
-                    ),
-                  OutlinedButton.icon(
-                    onPressed: _dijkstraRunning ? null : _resetDijkstra,
-                    icon: const Icon(Icons.restart_alt_rounded),
-                    label: const Text('Reiniciar'),
-                  ),
-                ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Cerrar'),
               ),
             ],
-          ),
-        ),
+          );
+        },
       ),
     );
   }
