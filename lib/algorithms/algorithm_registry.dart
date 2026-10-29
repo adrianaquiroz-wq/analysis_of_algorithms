@@ -3,12 +3,14 @@ import 'assignment/assignment_info.dart';
 import 'cpm/cpm_info.dart';
 import 'northwest/northwest_info.dart';
 import 'simple_graph/simple_graph_info.dart';
+import 'dijkstra/dijkstra_info.dart';
 
 export 'algorithm_info.dart';
 
 /// Orden en que aparecen las tarjetas del carrusel de GRAFOS.
 final List<AlgorithmInfo> graphAlgorithms = [
   simpleGraphInfo,
+  dijkstraInfo,
   assignmentInfo,
   cpmInfo,
   northwestInfo,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:graph_app/algorithms/algorithm_registry.dart';
+import 'package:graph_app/algorithms/dijkstra/logic/dijkstra_algorithm.dart';
 import 'package:graph_app/controllers/graph_controller.dart';
 import 'package:graph_app/models/edge_model.dart';
 import 'package:graph_app/models/node_model.dart';
@@ -62,6 +63,15 @@ class _GraphScreenState extends State<GraphScreen>
   @override
   String activeTool = 'select';
   bool _isRightPanelOpen = true;
+  String? _dijkstraSourceId;
+  String? _dijkstraTargetId;
+  DijkstraResult? _dijkstraResult;
+  int _dijkstraStep = 0;
+  bool _dijkstraRunning = false;
+  bool _dijkstraPaused = false;
+  int _dijkstraRunId = 0;
+  Map<String, Color> _dijkstraNodeColors = {};
+  Map<String, Color> _dijkstraEdgeColors = {};
 
   // Tema global: se lee y se escribe en el ThemeController.
   @override
@@ -118,6 +128,7 @@ class _GraphScreenState extends State<GraphScreen>
           ),
           Align(alignment: Alignment.centerRight, child: _buildToolbar()),
           _buildSolverButton(),
+          if (_algorithmType == 'dijkstra') _buildDijkstraPanel(),
         ],
       ),
     );
@@ -227,7 +238,7 @@ class _GraphScreenState extends State<GraphScreen>
               );
             });
           },
-          onNodeTap: handleNodeTap,
+          onNodeTap: _handleNodeTap,
           onCopyNode: (node) => copySelectedArea(),
           onCutNode: (node) => cutSelectedArea(),
           onDeleteNode: handleDeleteNode,
@@ -235,6 +246,233 @@ class _GraphScreenState extends State<GraphScreen>
         );
       },
     );
+  }
+
+  void _handleNodeTap(NodeModel node) {
+    if (_algorithmType != 'dijkstra') {
+      handleNodeTap(node);
+      return;
+    }
+    if (_dijkstraRunning) return;
+    setState(() {
+      if (_dijkstraSourceId == null || _dijkstraTargetId != null) {
+        _resetDijkstra();
+        _dijkstraSourceId = node.id;
+      } else {
+        _dijkstraTargetId = node.id;
+      }
+      graphController.clearSelection();
+    });
+  }
+
+  Widget _buildDijkstraPanel() {
+    final source = _nodeLabel(_dijkstraSourceId);
+    final target = _nodeLabel(_dijkstraTargetId);
+    return Positioned(
+      left: 16,
+      right: 16,
+      bottom: 16,
+      child: Card(
+        color: isDarkMode ? const Color(0xFF0F172A) : Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Dijkstra · ruta mínima',
+                style: TextStyle(
+                  color: isDarkMode ? Colors.white : Colors.black87,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Origen: ${source ?? 'haz clic en un nodo'}   '
+                'Destino: ${target ?? 'haz clic en otro nodo'}',
+                style: TextStyle(
+                  color: isDarkMode ? Colors.white70 : Colors.black54,
+                ),
+              ),
+              if (_dijkstraResult != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    _dijkstraResult!.pathNodeIds.isEmpty
+                        ? 'No existe una ruta entre los nodos seleccionados.'
+                        : 'Ruta: ${_dijkstraResult!.pathNodeIds.map(_nodeLabel).join(' → ')}'
+                            '   Distancia: ${_dijkstraResult!.distance}',
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white : Colors.black87,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              if (_dijkstraResult != null && _dijkstraStep > 0)
+                Text(
+                  'Distancias: ${_dijkstraResult!.steps[_dijkstraStep - 1].distances.entries.map((entry) => '${_nodeLabel(entry.key)}: ${entry.value == double.infinity ? '∞' : entry.value}').join(' · ')}',
+                  style: TextStyle(
+                    color: isDarkMode ? Colors.white70 : Colors.black54,
+                    fontSize: 12,
+                  ),
+                ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: _dijkstraRunning ||
+                            _dijkstraSourceId == null ||
+                            _dijkstraTargetId == null
+                        ? null
+                        : _startDijkstra,
+                    icon: const Icon(Icons.play_arrow_rounded),
+                    label: const Text('Ejecutar'),
+                  ),
+                  if (_dijkstraRunning)
+                    OutlinedButton.icon(
+                      onPressed: () => setState(
+                        () => _dijkstraPaused = !_dijkstraPaused,
+                      ),
+                      icon: Icon(
+                        _dijkstraPaused
+                            ? Icons.play_arrow_rounded
+                            : Icons.pause_rounded,
+                      ),
+                      label: Text(_dijkstraPaused ? 'Continuar' : 'Pausa'),
+                    ),
+                  if (_dijkstraRunning)
+                    OutlinedButton.icon(
+                      onPressed: _dijkstraPaused ? _advanceDijkstra : null,
+                      icon: const Icon(Icons.skip_next_rounded),
+                      label: const Text('Paso'),
+                    ),
+                  OutlinedButton.icon(
+                    onPressed: _dijkstraRunning ? null : _resetDijkstra,
+                    icon: const Icon(Icons.restart_alt_rounded),
+                    label: const Text('Reiniciar'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String? _nodeLabel(String? id) {
+    if (id == null) return null;
+    for (final node in graphController.nodes) {
+      if (node.id == id) return node.label;
+    }
+    return id;
+  }
+
+  void _startDijkstra() {
+    try {
+      _saveDijkstraColors();
+      final result = DijkstraAlgorithm.run(
+        nodes: graphController.nodes,
+        edges: graphController.edges,
+        sourceId: _dijkstraSourceId!,
+        targetId: _dijkstraTargetId!,
+      );
+      setState(() {
+        _dijkstraResult = result;
+        _dijkstraStep = 0;
+        _dijkstraRunning = true;
+        _dijkstraPaused = false;
+      });
+      _playDijkstra(++_dijkstraRunId);
+    } on FormatException catch (error) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    }
+  }
+
+  Future<void> _playDijkstra(int runId) async {
+    final result = _dijkstraResult!;
+    while (_dijkstraStep < result.steps.length) {
+      if (!mounted || runId != _dijkstraRunId) return;
+      if (_dijkstraPaused) {
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        continue;
+      }
+      _advanceDijkstra();
+      await Future<void>.delayed(const Duration(milliseconds: 650));
+    }
+    if (!mounted || runId != _dijkstraRunId) return;
+    setState(() {
+      for (final id in result.pathNodeIds) {
+        _nodeById(id)?.color = Colors.greenAccent;
+      }
+      for (final id in result.pathEdgeIds) {
+        _edgeById(id)?.color = Colors.cyanAccent;
+      }
+      _dijkstraRunning = false;
+      _dijkstraPaused = false;
+    });
+  }
+
+  void _advanceDijkstra() {
+    if (_dijkstraResult == null || _dijkstraStep >= _dijkstraResult!.steps.length) {
+      return;
+    }
+    final step = _dijkstraResult!.steps[_dijkstraStep++];
+    setState(() {
+      for (final id in step.visited) {
+        _nodeById(id)?.color = Colors.greenAccent;
+      }
+      _nodeById(step.currentId)?.color = Colors.amber;
+      if (step.edgeId != null) {
+        _edgeById(step.edgeId!)?.color = Colors.orangeAccent;
+      }
+    });
+  }
+
+  NodeModel? _nodeById(String id) {
+    for (final node in graphController.nodes) {
+      if (node.id == id) return node;
+    }
+    return null;
+  }
+
+  EdgeModel? _edgeById(String id) {
+    for (final edge in graphController.edges) {
+      if (edge.id == id) return edge;
+    }
+    return null;
+  }
+
+  void _saveDijkstraColors() {
+    _dijkstraNodeColors = {
+      for (final node in graphController.nodes) node.id: node.color,
+    };
+    _dijkstraEdgeColors = {
+      for (final edge in graphController.edges) edge.id: edge.color,
+    };
+  }
+
+  void _resetDijkstra() {
+    _dijkstraRunId++;
+    for (final node in graphController.nodes) {
+      final color = _dijkstraNodeColors[node.id];
+      if (color != null) node.color = color;
+    }
+    for (final edge in graphController.edges) {
+      final color = _dijkstraEdgeColors[edge.id];
+      if (color != null) edge.color = color;
+    }
+    _dijkstraSourceId = null;
+    _dijkstraTargetId = null;
+    _dijkstraResult = null;
+    _dijkstraStep = 0;
+    _dijkstraRunning = false;
+    _dijkstraPaused = false;
+    setState(() {});
   }
 
   Widget _buildSelectionBar(Color appBarColor) {
