@@ -8,7 +8,6 @@ Future<void> main() async {
   await ThemeController.instance.load();
   runApp(const MyApp());
 }
-
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 

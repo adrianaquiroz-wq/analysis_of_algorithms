@@ -25,6 +25,8 @@ import 'graph_persistence_mixin.dart';
 import 'widgets/algorithm_action_button.dart';
 import 'widgets/graph_edit_section.dart';
 
+const _criticalPathColor = Color(0xFFDC2626);
+
 class GraphScreen extends StatefulWidget {
   final bool initialLinearAssignment;
   final bool initialBipartiteAssignment;
@@ -76,6 +78,8 @@ class _GraphScreenState extends State<GraphScreen>
   Map<String, double> _dijkstraDistances = {};
   Map<String, Color> _dijkstraNodeColors = {};
   Map<String, Color> _dijkstraEdgeColors = {};
+  final Map<String, Color> _normalNodeColors = {};
+  final Map<String, Color> _normalEdgeColors = {};
   KruskalResult? _kruskalResult;
   int _kruskalStep = 0;
   bool _kruskalRunning = false;
@@ -106,6 +110,9 @@ class _GraphScreenState extends State<GraphScreen>
   @override
   EdgeType get newEdgeType =>
       _algorithmType == 'kruskal' ? EdgeType.simple : EdgeType.directed;
+
+  @override
+  bool get isKruskalMode => _algorithmType == 'kruskal';
 
   @override
   void dispose() {
@@ -324,6 +331,7 @@ class _GraphScreenState extends State<GraphScreen>
                       'Construye el árbol de expansión mínima '
                       'seleccionando aristas sin formar ciclos.',
                     ),
+                    _buildColorLegend(),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<KruskalOptimization>(
                       initialValue: _kruskalOptimization,
@@ -457,6 +465,34 @@ class _GraphScreenState extends State<GraphScreen>
       }
     }
 
+    Widget _buildColorLegend() {
+      return Padding(
+        padding: const EdgeInsets.only(top: 12),
+        child: Wrap(
+          spacing: 12,
+          runSpacing: 6,
+          children: [
+            _legendItem(_criticalPathColor, 'Ruta crítica'),
+          ],
+        ),
+      );
+    }
+
+    Widget _legendItem(Color color, String label) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 4),
+          Text(label),
+        ],
+      );
+    }
+
     Future<void> _playKruskal(int runId) async {
       final result = _kruskalResult!;
       while (_kruskalStep < result.steps.length) {
@@ -470,15 +506,22 @@ class _GraphScreenState extends State<GraphScreen>
       }
       if (!mounted || runId != _kruskalRunId) return;
       setState(() {
+        _restoreNormalColors();
+        final criticalNodeIds = <String>{};
         for (final node in graphController.nodes) {
-          node.color = result.connectedNodeIds.contains(node.id)
-              ? Colors.greenAccent
-              : Colors.grey;
+          node.color = _kruskalNodeColors[node.id] ?? node.color;
         }
         for (final edge in graphController.edges) {
-          edge.color = result.minimumSpanningTreeEdgeIds.contains(edge.id)
-              ? Colors.cyanAccent
-              : Colors.grey;
+          if (!result.minimumSpanningTreeEdgeIds.contains(edge.id)) continue;
+          edge.color = _criticalPathColor;
+          criticalNodeIds
+            ..add(edge.sourceId)
+            ..add(edge.targetId);
+        }
+        for (final node in graphController.nodes) {
+          if (criticalNodeIds.contains(node.id)) {
+            node.color = _criticalPathColor;
+          }
         }
         _kruskalRunning = false;
         _kruskalPaused = false;
@@ -488,50 +531,26 @@ class _GraphScreenState extends State<GraphScreen>
     void _advanceKruskal() {
       final result = _kruskalResult;
       if (result == null || _kruskalStep >= result.steps.length) return;
-      final step = result.steps[_kruskalStep++];
-      setState(() {
-        for (final edge in graphController.edges) {
-          if (step.selectedEdgeIds.contains(edge.id)) {
-            edge.color = Colors.cyanAccent;
-          } else if (edge.id == step.edgeId) {
-            edge.color = step.decision == KruskalDecision.accepted
-                ? Colors.amber
-                : Colors.redAccent;
-          } else {
-            edge.color = _kruskalEdgeColors[edge.id] ?? edge.color;
-          }
-        }
-        for (final node in graphController.nodes) {
-          node.color = step.connectedNodeIds.contains(node.id)
-              ? Colors.greenAccent
-              : _kruskalNodeColors[node.id] ?? node.color;
-        }
-      });
+      _kruskalStep++;
+      setState(_restoreNormalColors);
     }
 
     void _saveKruskalColors() {
-      _kruskalNodeColors = {
-        for (final node in graphController.nodes) node.id: node.color,
-      };
-      _kruskalEdgeColors = {
-        for (final edge in graphController.edges) edge.id: edge.color,
-      };
+      _captureNormalColors();
+      _restoreNormalColors();
+      _kruskalNodeColors = Map.of(_normalNodeColors);
+      _kruskalEdgeColors = Map.of(_normalEdgeColors);
     }
 
     void _resetKruskal() {
       _kruskalRunId++;
-      for (final node in graphController.nodes) {
-        final color = _kruskalNodeColors[node.id];
-        if (color != null) node.color = color;
-      }
-      for (final edge in graphController.edges) {
-        final color = _kruskalEdgeColors[edge.id];
-        if (color != null) edge.color = color;
-      }
+      _restoreNormalColors();
       _kruskalResult = null;
       _kruskalStep = 0;
       _kruskalRunning = false;
       _kruskalPaused = false;
+      _kruskalNodeColors.clear();
+      _kruskalEdgeColors.clear();
       setState(() {});
   }
 
@@ -580,6 +599,7 @@ class _GraphScreenState extends State<GraphScreen>
                       'Selecciona el origen y el destino haciendo clic '
                       'sobre los nodos del lienzo.',
                     ),
+                    _buildColorLegend(),
                     const SizedBox(height: 12),
                     Text(
                       'Origen: ${source ?? 'pendiente'}\n'
@@ -791,12 +811,13 @@ class _GraphScreenState extends State<GraphScreen>
     }
     if (!mounted || runId != _dijkstraRunId) return;
     setState(() {
+      _restoreNormalColors();
       _dijkstraDistances = result.distances;
       for (final id in result.pathNodeIds) {
-        _nodeById(id)?.color = Colors.greenAccent;
+        _nodeById(id)?.color = _criticalPathColor;
       }
       for (final id in result.pathEdgeIds) {
-        _edgeById(id)?.color = Colors.cyanAccent;
+        _edgeById(id)?.color = _criticalPathColor;
       }
       _dijkstraRunning = false;
       _dijkstraPaused = false;
@@ -809,14 +830,8 @@ class _GraphScreenState extends State<GraphScreen>
     }
     final step = _dijkstraResult!.steps[_dijkstraStep++];
     setState(() {
+      _restoreNormalColors();
       _dijkstraDistances = step.distances;
-      for (final id in step.visited) {
-        _nodeById(id)?.color = Colors.greenAccent;
-      }
-      _nodeById(step.currentId)?.color = Colors.amber;
-      if (step.edgeId != null) {
-        _edgeById(step.edgeId!)?.color = Colors.orangeAccent;
-      }
     });
   }
 
@@ -835,24 +850,15 @@ class _GraphScreenState extends State<GraphScreen>
   }
 
   void _saveDijkstraColors() {
-    _dijkstraNodeColors = {
-      for (final node in graphController.nodes) node.id: node.color,
-    };
-    _dijkstraEdgeColors = {
-      for (final edge in graphController.edges) edge.id: edge.color,
-    };
+    _captureNormalColors();
+    _restoreNormalColors();
+    _dijkstraNodeColors = Map.of(_normalNodeColors);
+    _dijkstraEdgeColors = Map.of(_normalEdgeColors);
   }
 
   void _resetDijkstra() {
     _dijkstraRunId++;
-    for (final node in graphController.nodes) {
-      final color = _dijkstraNodeColors[node.id];
-      if (color != null) node.color = color;
-    }
-    for (final edge in graphController.edges) {
-      final color = _dijkstraEdgeColors[edge.id];
-      if (color != null) edge.color = color;
-    }
+    _restoreNormalColors();
     _dijkstraSourceId = null;
     _dijkstraTargetId = null;
     _dijkstraResult = null;
@@ -860,7 +866,29 @@ class _GraphScreenState extends State<GraphScreen>
     _dijkstraStep = 0;
     _dijkstraRunning = false;
     _dijkstraPaused = false;
+    _dijkstraNodeColors.clear();
+    _dijkstraEdgeColors.clear();
     setState(() {});
+  }
+
+  void _captureNormalColors() {
+    for (final node in graphController.nodes) {
+      _normalNodeColors.putIfAbsent(node.id, () => node.color);
+    }
+    for (final edge in graphController.edges) {
+      _normalEdgeColors.putIfAbsent(edge.id, () => edge.color);
+    }
+  }
+
+  void _restoreNormalColors() {
+    for (final node in graphController.nodes) {
+      final color = _normalNodeColors[node.id];
+      if (color != null) node.color = color;
+    }
+    for (final edge in graphController.edges) {
+      final color = _normalEdgeColors[edge.id];
+      if (color != null) edge.color = color;
+    }
   }
 
   Widget _buildSelectionBar(Color appBarColor) {

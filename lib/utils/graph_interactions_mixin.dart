@@ -20,6 +20,7 @@ mixin GraphInteractionsMixin<T extends StatefulWidget>
   set isDarkMode(bool value);
 
   EdgeType get newEdgeType => EdgeType.directed;
+  bool get isKruskalMode => false;
 
   // Indica si el flujo de Asignación Bipartida está activo. Cuando está
   // activo, los nodos creados con la herramienta 'node' normal pasan a
@@ -208,10 +209,13 @@ mixin GraphInteractionsMixin<T extends StatefulWidget>
           graphController.selectedNodeId = node.id;
         });
       } else if (graphController.pendingSourceNodeId == node.id) {
+        if (isKruskalMode) {
+          _rejectKruskalEdge('Kruskal no permite bucles en un nodo.');
+          return;
+        }
         final alreadyExists = graphController.edges.any(
           (e) => e.sourceId == node.id && e.targetId == node.id,
         );
-
         if (alreadyExists) {
           setState(() => graphController.clearSelection());
           return;
@@ -223,11 +227,20 @@ mixin GraphInteractionsMixin<T extends StatefulWidget>
           graphController.clearSelection();
         });
       } else {
+        final sourceId = graphController.pendingSourceNodeId!;
         final alreadyExists = graphController.edges.any(
           (e) =>
-              e.sourceId == graphController.pendingSourceNodeId &&
-              e.targetId == node.id,
+              e.sourceId == sourceId && e.targetId == node.id ||
+              isKruskalMode &&
+                  e.sourceId == node.id &&
+                  e.targetId == sourceId,
         );
+        if (isKruskalMode && alreadyExists) {
+          _rejectKruskalEdge(
+            'Kruskal no permite dos aristas entre los mismos nodos.',
+          );
+          return;
+        }
 
         if (alreadyExists) {
           setState(() => graphController.clearSelection());
@@ -237,7 +250,7 @@ mixin GraphInteractionsMixin<T extends StatefulWidget>
         pushUndoSnapshot();
         setState(() {
           graphController.addEdge(
-            graphController.pendingSourceNodeId!,
+            sourceId,
             node.id,
             type: newEdgeType,
           );
@@ -245,6 +258,14 @@ mixin GraphInteractionsMixin<T extends StatefulWidget>
         });
       }
     }
+
+  }
+
+  void _rejectKruskalEdge(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+    setState(() => graphController.clearSelection());
   }
 
   void handleDeleteNode(NodeModel node) {
