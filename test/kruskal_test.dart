@@ -40,4 +40,19 @@ void main() {
       throwsA(isA<FormatException>()),
     );
   });
+
+  test('construye el árbol de expansión máxima', () {
+    final result = KruskalAlgorithm.run(
+      nodes: nodes,
+      edges: [
+        EdgeModel(id: 'ab', sourceId: 'a', targetId: 'b', weight: 4),
+        EdgeModel(id: 'ac', sourceId: 'a', targetId: 'c', weight: 1),
+        EdgeModel(id: 'bc', sourceId: 'b', targetId: 'c', weight: 2),
+      ],
+      optimization: KruskalOptimization.maximize,
+    );
+
+    expect(result.minimumSpanningTreeEdgeIds, ['ab', 'bc']);
+    expect(result.totalWeight, 6);
+  });
 }

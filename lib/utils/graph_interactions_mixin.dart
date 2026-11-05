@@ -5,6 +5,7 @@ import '../models/node_model.dart';
 import '../models/edge_model.dart';
 import 'graph_history_mixin.dart';
 import 'graph_dialogs.dart';
+import 'graph_math_utils.dart';
 
 // Cambiamos la firma para evitar el conflicto genérico con State<T>
 mixin GraphInteractionsMixin<T extends StatefulWidget>
@@ -113,6 +114,9 @@ mixin GraphInteractionsMixin<T extends StatefulWidget>
 
   // --- Toques en el Canvas ---
   void handleCanvasTapDown(TapDownDetails details) {
+    if (activeTool == 'select' && _isDeleteMenuTap(details.localPosition)) {
+      return;
+    }
     if (activeTool == 'node') {
       pushUndoSnapshot();
       setState(() {
@@ -123,6 +127,7 @@ mixin GraphInteractionsMixin<T extends StatefulWidget>
         if (isBipartiteMode && graphController.nodes.isNotEmpty) {
           graphController.nodes.last.bipartiteGroup = BipartiteGroup.groupA;
         }
+
       });
     } else if (activeTool == 'bipartite_node') {
       pushUndoSnapshot();
@@ -151,6 +156,36 @@ mixin GraphInteractionsMixin<T extends StatefulWidget>
     } else if (activeTool == 'select' || activeTool == 'area_select') {
       setState(() => graphController.clearSelection());
     }
+  }
+
+  bool _isDeleteMenuTap(Offset position) {
+    final selectedNode = graphController.selectedNode;
+    if (selectedNode != null) {
+      final menuRect = Rect.fromLTWH(
+        selectedNode.position.dx - 30,
+        selectedNode.position.dy - 75,
+        60,
+        40,
+      );
+      if (menuRect.contains(position)) return true;
+    }
+
+    final selectedEdge = graphController.selectedEdge;
+    if (selectedEdge != null) {
+      final midpoint = calculateEdgeMidpoint(
+        edge: selectedEdge,
+        nodes: graphController.nodes,
+        allEdges: graphController.edges,
+      );
+      final menuRect = Rect.fromLTWH(
+        midpoint.dx - 20,
+        midpoint.dy - 50,
+        40,
+        40,
+      );
+      if (menuRect.contains(position)) return true;
+    }
+    return false;
   }
 
   // --- Toques en Nodos ---

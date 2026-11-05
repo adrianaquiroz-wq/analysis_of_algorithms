@@ -79,6 +79,8 @@ class _GraphScreenState extends State<GraphScreen>
   int _kruskalStep = 0;
   bool _kruskalRunning = false;
   bool _kruskalPaused = false;
+  KruskalOptimization _kruskalOptimization =
+      KruskalOptimization.minimize;
   int _kruskalRunId = 0;
   Map<String, Color> _kruskalNodeColors = {};
   Map<String, Color> _kruskalEdgeColors = {};
@@ -319,6 +321,34 @@ class _GraphScreenState extends State<GraphScreen>
                       'seleccionando aristas sin formar ciclos.',
                     ),
                     const SizedBox(height: 12),
+                    DropdownButtonFormField<KruskalOptimization>(
+                      initialValue: _kruskalOptimization,
+                      decoration: const InputDecoration(
+                        labelText: 'Objetivo',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: KruskalOptimization.minimize,
+                          child: Text('Minimizar peso'),
+                        ),
+                        DropdownMenuItem(
+                          value: KruskalOptimization.maximize,
+                          child: Text('Maximizar peso'),
+                        ),
+                      ],
+                      onChanged: _kruskalRunning
+                          ? null
+                          : (value) => refresh(
+                                () {
+                                  if (value != null) {
+                                    _kruskalOptimization = value;
+                                    _kruskalResult = null;
+                                  }
+                                },
+                              ),
+                    ),
+                    const SizedBox(height: 12),
                     Text(
                       result == null
                           ? 'Todavía no se ha construido el árbol.'
@@ -406,6 +436,7 @@ class _GraphScreenState extends State<GraphScreen>
         final result = KruskalAlgorithm.run(
           nodes: graphController.nodes,
           edges: graphController.edges,
+          optimization: _kruskalOptimization,
         );
         setState(() {
           _kruskalResult = result;

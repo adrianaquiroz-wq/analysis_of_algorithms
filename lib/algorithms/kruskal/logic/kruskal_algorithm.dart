@@ -3,6 +3,8 @@ import 'package:graph_app/models/node_model.dart';
 
 enum KruskalDecision { accepted, rejected }
 
+enum KruskalOptimization { minimize, maximize }
+
 class KruskalStep {
   final String edgeId;
   final KruskalDecision decision;
@@ -35,6 +37,7 @@ class KruskalAlgorithm {
   static KruskalResult run({
     required List<NodeModel> nodes,
     required List<EdgeModel> edges,
+    KruskalOptimization optimization = KruskalOptimization.minimize,
   }) {
     final nodeIds = nodes.map((node) => node.id).toSet();
     final parent = {for (final id in nodeIds) id: id};
@@ -86,7 +89,11 @@ class KruskalAlgorithm {
     }
 
     final orderedEdges = [...edges]
-      ..sort((first, second) => first.weight.compareTo(second.weight));
+      ..sort(
+        (first, second) => optimization == KruskalOptimization.minimize
+            ? first.weight.compareTo(second.weight)
+            : second.weight.compareTo(first.weight),
+      );
 
     for (final edge in orderedEdges) {
       final accepts = find(edge.sourceId) != find(edge.targetId);
