@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui' show Offset;
 
 enum TraversalType { inOrder, preOrder, postOrder }
 
@@ -19,16 +20,82 @@ extension TraversalTypeX on TraversalType {
 /// Clave de una arista sin importar el sentido en que se recorra.
 String edgeKey(int a, int b) => a < b ? '$a-$b' : '$b-$a';
 
+/// Lectura y límites de los números que escribe el usuario.
+class TreeInput {
+  static const int maxNodes = 63;
+  static const int minValue = -999999999;
+  static const int maxValue = 999999999;
+
+  /// Separa por comas, punto y coma o espacios. Devuelve un error si algo no sirve.
+  static ({List<int> values, String? error}) parse(String text) {
+    final raw = text.trim();
+    if (raw.isEmpty) {
+      return (values: const <int>[], error: 'Escribe al menos un número.');
+    }
+    if (!RegExp(r'^[0-9,;\s\-]+$').hasMatch(raw)) {
+      return (
+        values: const <int>[],
+        error: 'Solo se permiten enteros separados por comas o espacios.',
+      );
+    }
+    final out = <int>[];
+    for (final tok in raw.split(RegExp(r'[\s,;]+'))) {
+      if (tok.isEmpty) continue;
+      final v = int.tryParse(tok);
+      if (v == null) {
+        return (values: const <int>[], error: 'Valor inválido: "$tok".');
+      }
+      if (v < minValue || v > maxValue) {
+        return (
+          values: const <int>[],
+          error: 'Cada valor debe estar entre $minValue y $maxValue.',
+        );
+      }
+      out.add(v);
+    }
+    if (out.isEmpty) {
+      return (values: const <int>[], error: 'Escribe al menos un número.');
+    }
+    return (values: out, error: null);
+  }
+}
+
 class TreeNode {
   final int value;
   TreeNode? left;
   TreeNode? right;
-  TreeNode(this.value);
+  TreeNode(this.value, {this.left, this.right});
+
+  Map<String, dynamic> toJson() => {
+    'v': value,
+    'l': left?.toJson(),
+    'r': right?.toJson(),
+  };
+
+  factory TreeNode.fromJson(Map<String, dynamic> j) => TreeNode(
+    j['v'] as int,
+    left: j['l'] == null
+        ? null
+        : TreeNode.fromJson(j['l'] as Map<String, dynamic>),
+    right: j['r'] == null
+        ? null
+        : TreeNode.fromJson(j['r'] as Map<String, dynamic>),
+  );
 }
 
-/// Árbol binario de búsqueda (menores a la izquierda, mayores a la derecha).
+/// Árbol binario. Puede venir de insertar números (búsqueda) o de una
+/// reconstrucción (forma general).
 class BinaryTree {
   TreeNode? root;
+  BinaryTree([this.root]);
+
+  static BinaryTree fromValues(List<int> values) {
+    final t = BinaryTree();
+    for (final v in values) {
+      t.insert(v);
+    }
+    return t;
+  }
 
   int get size {
     int count(TreeNode? n) => n == null ? 0 : 1 + count(n.left) + count(n.right);
@@ -42,25 +109,12 @@ class BinaryTree {
   }
 
   bool contains(int v) {
-    var cur = root;
-    while (cur != null) {
-      if (v == cur.value) return true;
-      cur = v < cur.value ? cur.left : cur.right;
-    }
-    return false;
+    bool go(TreeNode? n) =>
+        n != null && (n.value == v || go(n.left) || go(n.right));
+    return go(root);
   }
 
-  /// Valores por los que pasa el mono desde la raíz hasta el padre del nuevo nodo.
-  List<int> insertPath(int v) {
-    final path = <int>[];
-    var cur = root;
-    while (cur != null) {
-      path.add(cur.value);
-      cur = v < cur.value ? cur.left : cur.right;
-    }
-    return path;
-  }
-
+  /// Inserción de búsqueda: menores a la izquierda, mayores a la derecha.
   /// false si el valor ya existía.
   bool insert(int v) {
     if (root == null) {
@@ -86,8 +140,52 @@ class BinaryTree {
     }
   }
 
-  /// Posición de cada nodo: columna = orden in-order (así nunca se
-  /// encimen), fila = profundidad.
+  List<int> preOrder() {
+    final out = <int>[];
+    void go(TreeNode? n) {
+      if (n == null) return;
+      out.add(n.value);
+      go(n.left);
+      go(n.right);
+    }
+
+    go(root);
+    return out;
+  }
+
+  List<int> inOrder() {
+    final out = <int>[];
+    void go(TreeNode? n) {
+      if (n == null) return;
+      go(n.left);
+      out.add(n.value);
+      go(n.right);
+    }
+
+    go(root);
+    return out;
+  }
+
+  List<int> postOrder() {
+    final out = <int>[];
+    void go(TreeNode? n) {
+      if (n == null) return;
+      go(n.left);
+      go(n.right);
+      out.add(n.value);
+    }
+
+    go(root);
+    return out;
+  }
+
+  List<int> traversal(TraversalType t) => switch (t) {
+    TraversalType.inOrder => inOrder(),
+    TraversalType.preOrder => preOrder(),
+    TraversalType.postOrder => postOrder(),
+  };
+
+  /// Columna = orden in-order (así nunca se encima nada), fila = profundidad.
   Map<int, ({int col, int row})> layout() {
     final result = <int, ({int col, int row})>{};
     var col = 0;
@@ -101,6 +199,20 @@ class BinaryTree {
     go(root, 0);
     return result;
   }
+
+  /// Posiciones del lienzo (coordenadas del "mundo") con la distribución automática.
+  Map<int, Offset> autoPositions({double colW = 64, double rowH = 92}) => {
+    for (final e in layout().entries)
+      e.key: Offset(e.value.col * colW, e.value.row * rowH),
+  };
+
+  Map<String, dynamic> toJson() => {'root': root?.toJson()};
+
+  factory BinaryTree.fromJson(Map<String, dynamic> j) => BinaryTree(
+    j['root'] == null
+        ? null
+        : TreeNode.fromJson(j['root'] as Map<String, dynamic>),
+  );
 }
 
 // ---------------------------------------------------------------- Recorridos

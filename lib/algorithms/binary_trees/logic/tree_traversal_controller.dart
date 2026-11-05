@@ -1,5 +1,9 @@
+import 'dart:math';
+import 'dart:ui' show Offset;
+
 import 'package:flutter/foundation.dart';
 import 'package:graph_app/algorithms/binary_trees/logic/tree_model.dart';
+import 'package:graph_app/algorithms/binary_trees/logic/tree_reconstructor.dart';
 import 'package:graph_app/algorithms/binary_trees/storage/saved_tree.dart';
 import 'package:graph_app/algorithms/sorting/shell_sort/logic/shell_sort_controller.dart'
     show PlayState;
@@ -7,32 +11,40 @@ import 'package:graph_app/algorithms/sorting/shell_sort/logic/shell_sort_control
 export 'package:graph_app/algorithms/sorting/shell_sort/logic/shell_sort_controller.dart'
     show PlayState;
 
-/// Estado del árbol y de la animación del mono. La pantalla solo escucha.
+/// Estado del árbol, de su dibujo (posiciones) y de la animación del mono.
 class TreeTraversalController extends ChangeNotifier {
-  static const int minValue = 1;
-  static const int maxValue = 999;
-  static const int maxNodes = 20;
+  static const String _emptyNote =
+      'Crea un árbol por teclado, al azar o reconstruyéndolo con dos recorridos.';
 
   BinaryTree _tree = BinaryTree();
-  final List<int> _values = []; // orden en que se insertaron
+  Map<int, Offset> _positions = {};
+  String _origin = '';
+  String? _ambiguity;
+  int _treeVersion = 0;
+
   TraversalType _type = TraversalType.inOrder;
   TraversalResult? _result;
   int _cursor = 0;
   PlayState _state = PlayState.idle;
   double _speed = 1;
-  bool _inserting = false;
   int _runId = 0;
   bool _disposed = false;
 
   int? _monkey;
   StepKind? _lastKind;
-  String _note = 'Planta el primer número: será la raíz del árbol.';
+  String _note = _emptyNote;
   final List<int> _output = []; // recorrido: {A, B, D...}
   final List<int> _trail = []; // camino completo del mono
   final Set<String> _pathEdges = {};
 
   BinaryTree get tree => _tree;
-  List<int> get values => List.unmodifiable(_values);
+  Map<int, Offset> get positions => _positions;
+  String get origin => _origin;
+  String? get ambiguity => _ambiguity;
+
+  /// Sube cada vez que cambia el árbol entero (para reencuadrar la vista).
+  int get treeVersion => _treeVersion;
+
   TraversalType get type => _type;
   TraversalResult? get result => _result;
   int get cursor => _cursor;
@@ -40,7 +52,6 @@ class TreeTraversalController extends ChangeNotifier {
   PlayState get state => _state;
   double get speed => _speed;
   bool get isPlaying => _state == PlayState.playing;
-  bool get inserting => _inserting;
   int? get monkeyNode => _monkey;
   StepKind? get lastKind => _lastKind;
   String get note => _note;
@@ -52,9 +63,6 @@ class TreeTraversalController extends ChangeNotifier {
     if (!_disposed) notifyListeners();
   }
 
-  Future<void> _wait(int ms) =>
-      Future.delayed(Duration(milliseconds: (ms / _speed).round()));
-
   void _clearProgress() {
     _result = null;
     _cursor = 0;
@@ -65,66 +73,117 @@ class TreeTraversalController extends ChangeNotifier {
     _lastKind = null;
   }
 
-  // ------------------------------------------------------- Construir árbol
-
-  /// Agrega un valor con animación (el mono baja hasta su lugar).
-  /// Devuelve un mensaje de error o null si todo salió bien.
-  Future<String?> addValue(int v) async {
-    if (isPlaying || _inserting) return 'Espera a que termine la animación.';
-    if (v < minValue || v > maxValue) {
-      return 'Usa enteros entre $minValue y $maxValue.';
-    }
-    if (_tree.contains(v)) return 'El $v ya está en el árbol.';
-    if (_tree.size >= maxNodes) return 'Máximo $maxNodes nodos.';
-
+  void _replaceTree(
+    BinaryTree t,
+    String origin, {
+    Map<int, Offset>? positions,
+    String? ambiguity,
+  }) {
+    _runId++;
     _clearProgress();
-    final run = ++_runId;
-    _inserting = true;
-    _note = _tree.root == null
-        ? 'El mono planta la raíz $v.'
-        : 'El mono busca dónde colgar el $v…';
+    _tree = t;
+    _positions = positions ?? t.autoPositions();
+    _origin = origin;
+    _ambiguity = ambiguity;
+    _monkey = t.root?.value;
+    _note = t.root == null
+        ? _emptyNote
+        : 'Árbol listo (${t.size} nodos). Elige un recorrido y suelta al mono.';
+    _treeVersion++;
     _emit();
+  }
 
-    for (final id in _tree.insertPath(v)) {
-      _monkey = id;
-      _emit();
-      await _wait(450);
-      if (run != _runId) return null;
+  // ----------------------------------------------------- Crear el árbol
+
+  /// Crea un árbol de búsqueda con los números escritos (el primero es la raíz).
+  /// Devuelve un mensaje de error o null. Si hay error, se conserva el árbol anterior.
+  String? createFromText(String text) {
+    final r = TreeInput.parse(text);
+    if (r.error != null) return r.error;
+    final vals = r.values;
+    if (vals.length > TreeInput.maxNodes) {
+      return 'Máximo ${TreeInput.maxNodes} nodos.';
     }
-
-    _tree.insert(v);
-    _values.add(v);
-    _monkey = v;
-    _inserting = false;
-    _note = 'El $v quedó colgado en el árbol.';
-    _emit();
+    if (vals.toSet().length != vals.length) {
+      return 'Cada valor debe ser único.';
+    }
+    _replaceTree(
+      BinaryTree.fromValues(vals),
+      'Árbol de búsqueda · Inserción por teclado',
+    );
     return null;
   }
 
-  /// Reemplaza todo el árbol de golpe (aleatorio, cargar, limpiar).
-  void setValues(List<int> vals) {
-    _runId++;
-    _inserting = false;
-    _clearProgress();
-    _tree = BinaryTree();
-    _values.clear();
-    for (final v in vals) {
-      if (_tree.size >= maxNodes) break;
-      if (_tree.insert(v)) _values.add(v);
+  /// Árbol de búsqueda con valores distintos al azar dentro de [min, max].
+  String? generateRandom(int? min, int? max, int? count) {
+    if (min == null || max == null || count == null) {
+      return 'Escribe mínimo, máximo y cantidad como números enteros.';
     }
-    _monkey = _tree.root?.value;
-    _note = _values.isEmpty
-        ? 'Planta el primer número: será la raíz del árbol.'
-        : 'Árbol listo (${_values.length} nodos). Elige un recorrido y suelta al mono.';
+    if (min < TreeInput.minValue || max > TreeInput.maxValue) {
+      return 'Los valores deben estar entre ${TreeInput.minValue} y ${TreeInput.maxValue}.';
+    }
+    if (min > max) return 'El mínimo no puede ser mayor que el máximo.';
+    if (count < 1 || count > TreeInput.maxNodes) {
+      return 'La cantidad debe estar entre 1 y ${TreeInput.maxNodes}.';
+    }
+    if (max - min + 1 < count) {
+      return 'El rango no tiene $count valores diferentes.';
+    }
+    final rnd = Random();
+    final set = <int>{};
+    while (set.length < count) {
+      set.add(min + rnd.nextInt(max - min + 1));
+    }
+    _replaceTree(
+      BinaryTree.fromValues(set.toList()),
+      'Árbol de búsqueda · Aleatorio',
+    );
+    return null;
+  }
+
+  /// Reconstruye con dos recorridos. Si no son compatibles devuelve el error y
+  /// conserva el árbol anterior.
+  String? reconstructFromText(ReconstructPair pair, String textA, String textB) {
+    final ra = TreeInput.parse(textA);
+    if (ra.error != null) return 'Primer recorrido: ${ra.error}';
+    final rb = TreeInput.parse(textB);
+    if (rb.error != null) return 'Segundo recorrido: ${rb.error}';
+    try {
+      final res = TreeReconstructor.run(pair, ra.values, rb.values);
+      _replaceTree(
+        res.tree,
+        'Árbol reconstruido · ${pair.label}',
+        ambiguity: res.ambiguous
+            ? 'Pre-order y Post-order admiten varios árboles cuando un nodo tiene un solo hijo. Se muestra una solución válida con ese hijo a la izquierda.'
+            : null,
+      );
+      return null;
+    } on ReconstructException catch (e) {
+      return e.message;
+    }
+  }
+
+  void clear() => _replaceTree(BinaryTree(), '');
+
+  // ------------------------------------------------------------ Lienzo
+
+  void moveNode(int value, Offset position) {
+    if (!_positions.containsKey(value)) return;
+    _positions[value] = position;
     _emit();
   }
 
-  void clear() => setValues(const []);
+  /// Restaura la distribución automática de los nodos.
+  void autoArrange() {
+    _positions = _tree.autoPositions();
+    _treeVersion++;
+    _emit();
+  }
 
   // ----------------------------------------------------------- Recorrido
 
   void setType(TraversalType t) {
-    if (isPlaying || _inserting) return;
+    if (isPlaying) return;
     _runId++;
     _type = t;
     _clearProgress();
@@ -137,6 +196,9 @@ class TreeTraversalController extends ChangeNotifier {
     _speed = s;
     _emit();
   }
+
+  Future<void> _wait(int ms) =>
+      Future.delayed(Duration(milliseconds: (ms / _speed).round()));
 
   void _prepare() {
     _clearProgress();
@@ -156,9 +218,9 @@ class TreeTraversalController extends ChangeNotifier {
   }
 
   void start() {
-    if (_inserting || isPlaying) return;
+    if (isPlaying) return;
     if (_tree.root == null) {
-      _note = 'Primero planta al menos un número.';
+      _note = 'Primero crea un árbol.';
       _emit();
       return;
     }
@@ -196,7 +258,7 @@ class TreeTraversalController extends ChangeNotifier {
   }
 
   void stepForward() {
-    if (_inserting || _tree.root == null || isPlaying) return;
+    if (_tree.root == null || isPlaying) return;
     if (_state == PlayState.idle || _state == PlayState.done) _prepare();
     _runId++;
     _state = PlayState.paused;
@@ -212,10 +274,9 @@ class TreeTraversalController extends ChangeNotifier {
 
   void reset() {
     _runId++;
-    _inserting = false;
     _clearProgress();
     _monkey = _tree.root?.value;
-    _note = 'Todo listo para un nuevo recorrido.';
+    _note = _tree.root == null ? _emptyNote : 'Todo listo para un nuevo recorrido.';
     _emit();
   }
 
@@ -229,9 +290,14 @@ class TreeTraversalController extends ChangeNotifier {
           : TreeTraversalAlgorithm.run(_tree, t),
   };
 
-  /// Restaura árbol, recorrido elegido y el paso exacto en que se guardó.
+  /// Restaura forma, posiciones, recorrido elegido y el paso exacto.
   void loadSaved(SavedTree s) {
-    setValues(s.values);
+    final auto = s.tree.autoPositions();
+    final pos = {
+      for (final e in auto.entries) e.key: s.positions[e.key] ?? e.value,
+    };
+    _replaceTree(s.tree, s.origin, positions: pos, ambiguity: s.ambiguity);
+
     _type = s.type;
     final r = s.results[s.type] ?? TreeTraversalAlgorithm.run(_tree, s.type);
     _result = r;
