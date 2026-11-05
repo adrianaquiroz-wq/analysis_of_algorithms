@@ -354,7 +354,8 @@ class _GraphScreenState extends State<GraphScreen>
                           ? 'Todavía no se ha construido el árbol.'
                           : 'Aristas seleccionadas: '
                               '${result.minimumSpanningTreeEdgeIds.length}'
-                              ' · Peso total: ${result.totalWeight}',
+                              ' · ${_kruskalOptimization == KruskalOptimization.minimize ? 'Suma mínima' : 'Suma máxima'}: '
+                              '${result.totalWeight}',
                     ),
                     if (result != null &&
                         result.connectedNodeIds.length <
