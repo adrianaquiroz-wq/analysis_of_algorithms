@@ -20,6 +20,7 @@ class GraphCanvas extends StatelessWidget {
   final String? selectedNodeId;
   final String? selectedEdgeId;
   final String? pendingSourceNodeId;
+  final Map<String, double>? dijkstraDistances;
   final String activeTool;
   final Set<String> selectedNodeIds;
   final Set<String> selectedEdgeIds;
@@ -49,6 +50,7 @@ class GraphCanvas extends StatelessWidget {
     required this.selectedNodeId,
     required this.selectedEdgeId,
     required this.pendingSourceNodeId,
+    required this.dijkstraDistances,
     required this.activeTool,
     required this.selectedNodeIds,
     required this.selectedEdgeIds,
@@ -132,6 +134,7 @@ class GraphCanvas extends StatelessWidget {
                 nodes: nodes,
                 selectedNodeId: selectedNodeId,
                 pendingSourceNodeId: pendingSourceNodeId,
+                dijkstraDistances: dijkstraDistances,
                 activeTool: activeTool,
                 isDarkMode: isDarkMode,
                 onNodeDragStart: onNodeDragStart,

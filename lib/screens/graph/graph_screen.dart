@@ -73,6 +73,7 @@ class _GraphScreenState extends State<GraphScreen>
   DijkstraOptimization _dijkstraOptimization =
       DijkstraOptimization.minimize;
   int _dijkstraRunId = 0;
+  Map<String, double> _dijkstraDistances = {};
   Map<String, Color> _dijkstraNodeColors = {};
   Map<String, Color> _dijkstraEdgeColors = {};
   KruskalResult? _kruskalResult;
@@ -227,6 +228,9 @@ class _GraphScreenState extends State<GraphScreen>
           selectedNodeId: graphController.selectedNodeId,
           selectedEdgeId: graphController.selectedEdgeId,
           pendingSourceNodeId: graphController.pendingSourceNodeId,
+          dijkstraDistances: _algorithmType == 'dijkstra'
+              ? _dijkstraDistances
+              : null,
           activeTool: activeTool,
           selectedNodeIds: graphController.selectedNodeIds,
           selectedEdgeIds: graphController.selectedEdgeIds,
@@ -544,6 +548,14 @@ class _GraphScreenState extends State<GraphScreen>
   }
 
   Future<void> _showDijkstraOptions() async {
+    final nodeIds = graphController.nodes.map((node) => node.id).toSet();
+    if (!nodeIds.contains(_dijkstraSourceId)) {
+      _dijkstraSourceId = null;
+    }
+    if (!nodeIds.contains(_dijkstraTargetId)) {
+      _dijkstraTargetId = null;
+    }
+
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
@@ -754,6 +766,7 @@ class _GraphScreenState extends State<GraphScreen>
       setState(() {
         _dijkstraResult = result;
         _dijkstraStep = 0;
+        _dijkstraDistances = {};
         _dijkstraRunning = true;
         _dijkstraPaused = false;
       });
@@ -778,6 +791,7 @@ class _GraphScreenState extends State<GraphScreen>
     }
     if (!mounted || runId != _dijkstraRunId) return;
     setState(() {
+      _dijkstraDistances = result.distances;
       for (final id in result.pathNodeIds) {
         _nodeById(id)?.color = Colors.greenAccent;
       }
@@ -795,6 +809,7 @@ class _GraphScreenState extends State<GraphScreen>
     }
     final step = _dijkstraResult!.steps[_dijkstraStep++];
     setState(() {
+      _dijkstraDistances = step.distances;
       for (final id in step.visited) {
         _nodeById(id)?.color = Colors.greenAccent;
       }
@@ -841,6 +856,7 @@ class _GraphScreenState extends State<GraphScreen>
     _dijkstraSourceId = null;
     _dijkstraTargetId = null;
     _dijkstraResult = null;
+    _dijkstraDistances = {};
     _dijkstraStep = 0;
     _dijkstraRunning = false;
     _dijkstraPaused = false;

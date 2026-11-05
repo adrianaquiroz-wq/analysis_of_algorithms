@@ -43,6 +43,9 @@ void main() {
     expect(result.pathNodeIds, ['a', 'c', 'b']);
     expect(result.pathEdgeIds, ['ac', 'cb']);
     expect(result.distance, 3);
+    expect(result.distances['a'], 0);
+    expect(result.distances['c'], 1);
+    expect(result.distances['b'], 3);
   });
 
   test('rechaza aristas no dirigidas o pesos no positivos', () {

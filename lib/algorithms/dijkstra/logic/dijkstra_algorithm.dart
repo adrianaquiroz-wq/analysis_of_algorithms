@@ -20,12 +20,14 @@ class DijkstraResult {
   final List<String> pathNodeIds;
   final List<String> pathEdgeIds;
   final double distance;
+  final Map<String, double> distances;
 
   const DijkstraResult({
     required this.steps,
     required this.pathNodeIds,
     required this.pathEdgeIds,
     required this.distance,
+    required this.distances,
   });
 }
 
@@ -62,6 +64,10 @@ class DijkstraAlgorithm {
         pathNodeIds: [sourceId],
         pathEdgeIds: const [],
         distance: 0,
+        distances: {
+          for (final id in nodeIds)
+            id: id == sourceId ? 0 : double.infinity,
+        },
       );
     }
     if (optimization == DijkstraOptimization.maximize) {
@@ -171,7 +177,7 @@ class DijkstraAlgorithm {
     final steps = <DijkstraStep>[];
     distances[sourceId] = 0;
     for (final current in order) {
-      if (distances[current] == double.infinity) continue;
+      if (distances[current] == double.negativeInfinity) continue;
       visited.add(current);
       steps.add(
         DijkstraStep(
@@ -220,12 +226,19 @@ class DijkstraAlgorithm {
         pathNodeIds: const [],
         pathEdgeIds: const [],
         distance: double.infinity,
+        distances: Map.of(distances),
       );
     }
     final pathNodeIds = <String>[];
     final pathEdgeIds = <String>[];
+    final pathVisited = <String>{};
     String? current = targetId;
     while (current != null) {
+      if (!pathVisited.add(current)) {
+        throw const FormatException(
+          'No se pudo reconstruir la ruta porque contiene un ciclo.',
+        );
+      }
       pathNodeIds.add(current);
       final edgeId = previousEdge[current];
       if (edgeId != null) pathEdgeIds.add(edgeId);
@@ -236,6 +249,7 @@ class DijkstraAlgorithm {
       pathNodeIds: pathNodeIds.reversed.toList(),
       pathEdgeIds: pathEdgeIds.reversed.toList(),
       distance: distances[targetId]!,
+      distances: Map.of(distances),
     );
   }
 }

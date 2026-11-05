@@ -7,6 +7,7 @@ List<Widget> buildGraphNodeWidgets({
   required List<NodeModel> nodes,
   required String? selectedNodeId,
   required String? pendingSourceNodeId,
+  required Map<String, double>? dijkstraDistances,
   required String activeTool,
   required bool isDarkMode,
   required void Function(NodeModel node) onNodeDragStart,
@@ -24,6 +25,10 @@ List<Widget> buildGraphNodeWidgets({
     final isPending = pendingSourceNodeId == node.id;
     final isGroupA = node.bipartiteGroup == BipartiteGroup.groupA;
     final isGroupB = node.bipartiteGroup == BipartiteGroup.groupB;
+    final distance = dijkstraDistances?[node.id];
+    final nodeText = distance == null
+        ? node.label
+        : '${node.label}\nd: ${distance == double.infinity ? '∞' : distance}';
 
     Color borderColorFor() {
       if (isSelected || isPending) return Colors.cyanAccent;
@@ -66,10 +71,12 @@ List<Widget> buildGraphNodeWidgets({
             ),
             child: Center(
               child: Text(
-                node.label,
+                nodeText,
+                textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
+                  fontSize: 11,
                 ),
               ),
             ),
