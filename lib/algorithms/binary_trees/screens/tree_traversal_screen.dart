@@ -36,7 +36,11 @@ class _TreeTraversalScreenState extends State<TreeTraversalScreen> {
   final _reconB = TextEditingController();
   final ValueNotifier<bool> _lockScroll = ValueNotifier<bool>(false);
 
-  ReconstructPair _pair = ReconstructPair.inPre;
+  ReconstructPair _pair = ReconstructPair.postIn;
+    static const List<ReconstructPair> _allowedPairs = [
+    ReconstructPair.postIn,
+    ReconstructPair.postPre,
+  ];
   String? _keyError;
   String? _randError;
   String? _reconError;
@@ -86,7 +90,7 @@ class _TreeTraversalScreenState extends State<TreeTraversalScreen> {
     _create();
   }
 
-  void _random() {
+    void _random() {
     final err = _c.generateRandom(
       int.tryParse(_min.text.trim()),
       int.tryParse(_max.text.trim()),
@@ -96,7 +100,12 @@ class _TreeTraversalScreenState extends State<TreeTraversalScreen> {
       _randError = err;
       _keyError = null;
       _reconError = null;
-      if (err == null) _detachFile();
+      if (err == null) {
+        _detachFile();
+        // Deja los números en "Crear por teclado": si pulsas "Crear árbol"
+        // se reproduce exactamente el mismo árbol.
+        _keyInput.text = _c.tree.preOrder().join(', ');
+      }
     });
   }
 
@@ -498,7 +507,7 @@ class _TreeTraversalScreenState extends State<TreeTraversalScreen> {
             spacing: 8,
             runSpacing: 4,
             children: [
-              for (final pair in ReconstructPair.values)
+                for (final pair in _allowedPairs)
                 ChoiceChip(
                   label: Text(pair.label, style: const TextStyle(fontSize: 12)),
                   selected: _pair == pair,
