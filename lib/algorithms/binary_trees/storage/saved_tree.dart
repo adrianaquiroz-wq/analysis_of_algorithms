@@ -1,36 +1,49 @@
 import 'dart:convert';
+import 'dart:ui' show Offset;
 
 import 'package:graph_app/algorithms/binary_trees/logic/tree_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Un árbol guardado con todo: valores (en orden de inserción), recorrido
-/// elegido, el paso en que estaba y el procedimiento de los 3 recorridos.
+/// Un árbol guardado con todo: forma exacta, posición de cada nodo, cómo se
+/// creó, recorrido elegido, paso en que estaba y el procedimiento de los 3
+/// recorridos.
 class SavedTree {
   final String id;
   final String name;
   final DateTime updatedAt;
-  final List<int> values;
+  final String origin;
+  final BinaryTree tree;
+  final Map<int, Offset> positions;
   final TraversalType type;
   final int cursor;
   final Map<TraversalType, TraversalResult> results;
+  final String? ambiguity;
 
   const SavedTree({
     required this.id,
     required this.name,
     required this.updatedAt,
-    required this.values,
+    required this.origin,
+    required this.tree,
+    required this.positions,
     required this.type,
     required this.cursor,
     required this.results,
+    this.ambiguity,
   });
 
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
     'updatedAt': updatedAt.toIso8601String(),
-    'values': values,
+    'origin': origin,
+    'tree': tree.toJson(),
+    'positions': {
+      for (final e in positions.entries) '${e.key}': [e.value.dx, e.value.dy],
+    },
     'type': type.name,
     'cursor': cursor,
+    'ambiguity': ambiguity,
     'results': {for (final e in results.entries) e.key.name: e.value.toJson()},
   };
 
@@ -38,9 +51,17 @@ class SavedTree {
     id: j['id'] as String,
     name: j['name'] as String,
     updatedAt: DateTime.parse(j['updatedAt'] as String),
-    values: (j['values'] as List).map((e) => (e as num).toInt()).toList(),
+    origin: j['origin'] as String? ?? '',
+    tree: BinaryTree.fromJson(j['tree'] as Map<String, dynamic>),
+    positions: (j['positions'] as Map<String, dynamic>).map(
+      (k, v) => MapEntry(
+        int.parse(k),
+        Offset((v as List)[0].toDouble(), v[1].toDouble()),
+      ),
+    ),
     type: TraversalType.values.byName(j['type'] as String),
     cursor: (j['cursor'] as num?)?.toInt() ?? 0,
+    ambiguity: j['ambiguity'] as String?,
     results: (j['results'] as Map<String, dynamic>).map(
       (k, v) => MapEntry(
         TraversalType.values.byName(k),
@@ -51,7 +72,8 @@ class SavedTree {
 }
 
 class TreeStorageService {
-  static const String _key = 'saved_trees';
+  // v2: formato nuevo (forma del árbol + posiciones). No choca con el anterior.
+  static const String _key = 'saved_trees_v2';
 
   Future<List<SavedTree>> list() async {
     final all = await _readAll();
