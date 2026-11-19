@@ -88,48 +88,78 @@ class _MatlabLabScreenState extends State<MatlabLabScreen> {
     String button,
     VoidCallback? onTap,
   ) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: p.card,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: p.cardBorder),
+    return Card(
+      color: p.card,
+      elevation: 3,
+      shadowColor: Colors.black.withValues(alpha: 0.15),
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: p.cardBorder, width: 1),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: p.accent.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: p.accent.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: p.accent, size: 26),
                 ),
-                child: Icon(icon, color: p.accent, size: 24),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      color: p.text,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              desc,
+              style: TextStyle(
+                color: p.subtleText,
+                fontSize: 13.5,
+                height: 1.4,
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    color: p.text,
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: onTap,
+                icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                label: Text(
+                  button,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 10,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(desc, style: TextStyle(color: p.subtleText, fontSize: 13)),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(onPressed: onTap, child: Text(button)),
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -181,68 +211,78 @@ class _MatlabLabScreenState extends State<MatlabLabScreen> {
               Colors.redAccent,
               onClose: () => setState(() => _error = null),
             ),
-          _tool(
-            p,
-            Icons.functions_rounded,
-            'MATLAB',
-            'Abre el entorno de MATLAB para trabajar con tus modelos y scripts.',
-            'Abrir MATLAB',
-            enabled ? () => _run(MatlabLauncher.openMatlab) : null,
-          ),
-          const SizedBox(height: 12),
-          _tool(
-            p,
-            Icons.science_outlined,
-            'Fuzzy Logic Designer',
-            'Abre el diseñador de sistemas difusos. Requiere Fuzzy Logic Toolbox.',
-            'Abrir Fuzzy Designer',
-            enabled ? () => _run(MatlabLauncher.openFuzzyDesigner) : null,
-          ),
-          const SizedBox(height: 12),
-          _tool(
-            p,
-            Icons.upload_file_rounded,
-            'Tu sistema difuso',
-            'Carga un archivo .fis de hasta 2 MB para abrirlo en Fuzzy Logic Designer.',
-            'Seleccionar archivo .fis',
-            enabled ? _pickFis : null,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _tool(
+                  p,
+                  Icons.functions_rounded,
+                  'MATLAB',
+                  'Abre el entorno de MATLAB para trabajar con tus modelos y scripts.',
+                  'Abrir MATLAB',
+                  enabled ? () => _run(MatlabLauncher.openMatlab) : null,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _tool(
+                  p,
+                  Icons.science_outlined,
+                  'Fuzzy Logic Designer',
+                  'Abre el diseñador de sistemas difusos. Requiere Fuzzy Logic Toolbox.',
+                  'Abrir Fuzzy Designer',
+                  enabled ? () => _run(MatlabLauncher.openFuzzyDesigner) : null,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _tool(
+                  p,
+                  Icons.upload_file_rounded,
+                  'Tu sistema difuso',
+                  'Carga un archivo .fis de hasta 2 MB para abrirlo en Fuzzy Logic Designer.',
+                  'Seleccionar archivo .fis',
+                  enabled ? _pickFis : null,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           Container(
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: p.card,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: p.cardBorder),
             ),
-            child: Theme(
-              data: Theme.of(context)
-                  .copyWith(dividerColor: Colors.transparent),
-              child: ExpansionTile(
-                iconColor: p.text,
-                collapsedIconColor: p.text,
-                title: Text(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
                   'Antes de empezar',
-                  style: TextStyle(color: p.text, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: p.text,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                expandedCrossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (final t in const [
-                    '1. Instala MATLAB y el Fuzzy Logic Toolbox.',
-                    '2. En la carpeta del proyecto, ejecuta: node matlabServer.js',
-                    r'3. Si MATLAB no abre, define la variable MATLAB_CMD con la ruta de matlab.exe, por ejemplo: C:\Program Files\MATLAB\R2024b\bin\matlab.exe',
-                    '4. En Fuzzy Designer, pulsa Export → Export Fuzzy Inference System To Workspace.',
-                    r"5. Ejemplo: writeFIS(prubilla, 'C:/APPS/prubilla') crea el archivo prubilla.fis.",
-                  ])
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Text(
-                        t,
-                        style: TextStyle(color: p.subtleText, fontSize: 13),
-                      ),
+                const SizedBox(height: 10),
+                for (final t in const [
+                  '1. Instala MATLAB y el Fuzzy Logic Toolbox.',
+                  '2. En la carpeta del proyecto, ejecuta: node matlabServer.js',
+                  r'3. Si MATLAB no abre, define la variable MATLAB_CMD con la ruta de matlab.exe, por ejemplo: C:\Program Files\MATLAB\R2024b\bin\matlab.exe',
+                  '4. En Fuzzy Designer, pulsa Export → Export Fuzzy Inference System To Workspace.',
+                  r"5. Ejemplo: writeFIS(prubilla, 'C:/APPS/prubilla') crea el archivo prubilla.fis.",
+                ])
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Text(
+                      t,
+                      style: TextStyle(color: p.subtleText, fontSize: 13),
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
           ),
         ],
