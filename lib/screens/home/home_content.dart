@@ -83,6 +83,14 @@ class HomeContent extends StatelessWidget {
             cardColor: palette.card,
             accentColor: palette.accent,
           ),
+          const SizedBox(height: 16),
+          MatlabFuzzyCategoryCard(
+            isDarkMode: isDark,
+            textColor: palette.text,
+            cardColor: palette.card,
+            accentColor: palette.accent,
+          ),
+
           const SizedBox(height: 30),
           //Center(child: _FreeCanvasButton(accent: palette.accent)),
         ],

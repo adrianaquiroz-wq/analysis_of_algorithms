@@ -31,7 +31,7 @@ dependencies:
   flutter:
     sdk: flutter
   path_provider: ^2.1.2  # O la versión más reciente compatible
-  file_picker: ^12.1.2  
+  file_picker: 10.3.0  
   url_launcher: ^6.3.3  # Para abrir y guardar archivos nativos
   #saf: ^1.2.3            # (Opcional, pero file_picker suele bastar para la mayoría de plataformas)
 
@@ -40,6 +40,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   shared_preferences: ^2.5.5
   intl: ^0.20.3
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:

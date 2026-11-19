@@ -37,7 +37,7 @@ class _TreeTraversalScreenState extends State<TreeTraversalScreen> {
   final ValueNotifier<bool> _lockScroll = ValueNotifier<bool>(false);
 
   ReconstructPair _pair = ReconstructPair.postIn;
-    static const List<ReconstructPair> _allowedPairs = [
+  static const List<ReconstructPair> _allowedPairs = [
     ReconstructPair.postIn,
     ReconstructPair.postPre,
   ];
@@ -48,9 +48,12 @@ class _TreeTraversalScreenState extends State<TreeTraversalScreen> {
   String? _currentId;
   String? _currentName;
 
-  static final _listFormatter =
-      FilteringTextInputFormatter.allow(RegExp(r'[0-9,;\s\-]'));
-  static final _intFormatter = FilteringTextInputFormatter.allow(RegExp(r'[0-9\-]'));
+  static final _listFormatter = FilteringTextInputFormatter.allow(
+    RegExp(r'[0-9,;\s\-]'),
+  );
+  static final _intFormatter = FilteringTextInputFormatter.allow(
+    RegExp(r'[0-9\-]'),
+  );
 
   @override
   void dispose() {
@@ -90,21 +93,24 @@ class _TreeTraversalScreenState extends State<TreeTraversalScreen> {
     _create();
   }
 
-    void _random() {
+  void _random() {
     final err = _c.generateRandom(
       int.tryParse(_min.text.trim()),
       int.tryParse(_max.text.trim()),
       int.tryParse(_count.text.trim()),
     );
+
     setState(() {
       _randError = err;
       _keyError = null;
       _reconError = null;
+
       if (err == null) {
         _detachFile();
-        // Deja los números en "Crear por teclado": si pulsas "Crear árbol"
-        // se reproduce exactamente el mismo árbol.
-        _keyInput.text = _c.tree.preOrder().join(', ');
+
+        // Copia los números del árbol generado al campo "Números de inserción".
+        // Está en preorden, así que "Crear árbol" reproduce el mismo árbol.
+        _keyInput.text = _c.tree.traversal(TraversalType.preOrder).join(', ');
       }
     });
   }
@@ -239,6 +245,10 @@ class _TreeTraversalScreenState extends State<TreeTraversalScreen> {
       _keyError = null;
       _randError = null;
       _reconError = null;
+
+      // Muestra los números del árbol cargado en "Números de inserción".
+      // Va en preorden para que "Crear árbol" reproduzca el mismo árbol.
+      _keyInput.text = _c.tree.traversal(TraversalType.preOrder).join(', ');
     });
   }
 
@@ -291,7 +301,10 @@ class _TreeTraversalScreenState extends State<TreeTraversalScreen> {
       ? const SizedBox.shrink()
       : Padding(
           padding: const EdgeInsets.only(top: 8),
-          child: Text(e, style: const TextStyle(color: Colors.redAccent, fontSize: 13)),
+          child: Text(
+            e,
+            style: const TextStyle(color: Colors.redAccent, fontSize: 13),
+          ),
         );
 
   Widget _buildDrawer(AppPalette p) => GraphDrawer(
@@ -402,7 +415,9 @@ class _TreeTraversalScreenState extends State<TreeTraversalScreen> {
           OutlinedButton.icon(
             onPressed: _save,
             icon: const Icon(Icons.save_rounded, size: 18),
-            label: Text(_currentName == null ? 'Guardar' : 'Guardar "$_currentName"'),
+            label: Text(
+              _currentName == null ? 'Guardar' : 'Guardar "$_currentName"',
+            ),
           ),
           OutlinedButton.icon(
             onPressed: _openSaved,
@@ -507,7 +522,7 @@ class _TreeTraversalScreenState extends State<TreeTraversalScreen> {
             spacing: 8,
             runSpacing: 4,
             children: [
-                for (final pair in _allowedPairs)
+              for (final pair in _allowedPairs)
                 ChoiceChip(
                   label: Text(pair.label, style: const TextStyle(fontSize: 12)),
                   selected: _pair == pair,
@@ -571,7 +586,11 @@ class _TreeTraversalScreenState extends State<TreeTraversalScreen> {
   }
 
   Widget _monkeyCard(AppPalette p) {
-    final (String label, IconData icon, VoidCallback action) = switch (_c.state) {
+    final (
+      String label,
+      IconData icon,
+      VoidCallback action,
+    ) = switch (_c.state) {
       PlayState.idle => ('Soltar al mono', Icons.play_arrow_rounded, _c.start),
       PlayState.playing => ('Pausar', Icons.pause_rounded, _c.pause),
       PlayState.paused => ('Continuar', Icons.play_arrow_rounded, _c.resume),
@@ -602,11 +621,16 @@ class _TreeTraversalScreenState extends State<TreeTraversalScreen> {
                   ),
               ],
               selected: {_c.type},
-              onSelectionChanged: _c.isPlaying ? null : (s) => _c.setType(s.first),
+              onSelectionChanged: _c.isPlaying
+                  ? null
+                  : (s) => _c.setType(s.first),
             ),
           ),
           const SizedBox(height: 6),
-          Text(_c.type.rule, style: TextStyle(color: p.subtleText, fontSize: 13)),
+          Text(
+            _c.type.rule,
+            style: TextStyle(color: p.subtleText, fontSize: 13),
+          ),
           const SizedBox(height: 10),
           Container(
             width: double.infinity,
@@ -621,7 +645,10 @@ class _TreeTraversalScreenState extends State<TreeTraversalScreen> {
                 Icon(Icons.pets_rounded, color: p.accent, size: 18),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(_c.note, style: TextStyle(color: p.text, fontSize: 13)),
+                  child: Text(
+                    _c.note,
+                    style: TextStyle(color: p.text, fontSize: 13),
+                  ),
                 ),
               ],
             ),
@@ -652,7 +679,9 @@ class _TreeTraversalScreenState extends State<TreeTraversalScreen> {
                 style: TextStyle(color: p.text),
                 underline: const SizedBox.shrink(),
                 items: const [0.5, 1.0, 2.0, 4.0]
-                    .map((s) => DropdownMenuItem(value: s, child: Text('${s}x')))
+                    .map(
+                      (s) => DropdownMenuItem(value: s, child: Text('${s}x')),
+                    )
                     .toList(),
                 onChanged: (s) => s == null ? null : _c.setSpeed(s),
               ),
@@ -689,7 +718,11 @@ class _TreeTraversalScreenState extends State<TreeTraversalScreen> {
         children: [
           Text(
             '${t.label} · ${t.rule}',
-            style: TextStyle(color: p.subtleText, fontWeight: FontWeight.bold, fontSize: 13),
+            style: TextStyle(
+              color: p.subtleText,
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+            ),
           ),
           const SizedBox(height: 8),
           SelectableText(
